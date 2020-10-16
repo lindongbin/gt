@@ -1,0 +1,70 @@
+name: deploy-to-ibm
+
+on:
+  schedule:
+    - cron: "0 20 * * 6"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Prepare for Deployment
+      run: |
+        cat > requirements.txt << EOF
+        aiohttp
+        EOF
+
+        cat > pixiv.py << EOF
+        import json, random, asyncio, aiohttp
+        from aiohttp import web
+        routes = web.RouteTableDef()
+        @routes.get('/')
+        async def pixiv(request):
+            async with aiohttp.ClientSession() as session:
+                pix = random.randint(1, 10)
+                url = "https://www.pixiv.net/ranking.php?mode=daily&content=illust&p=" + str(pix) +"&format=json"
+                async with session.get(url=url) as req:
+                    resp = await req.read()
+                pix = random.randint(0, 49)
+                resp = json.loads(resp)["contents"][pix]["illust_id"]
+                url = "https://www.pixiv.net/ajax/illust/" + str(resp) + "/pages"
+                async with session.get(url=url) as req:
+                    resp = await req.read()
+                resp = json.loads(resp)["body"][0]["urls"]["original"]
+                headers = {'Referer':'https://app-api.pixiv.net/'}
+                async with session.get(url=resp, headers=headers) as req:
+                    resp = await req.read()
+            return web.Response(body=resp,content_type="image/png") 
+        app = web.Application()
+        app.add_routes(routes)
+        web.run_app(app)
+        EOF
+        
+        cat > Procfile << EOF
+        web: python pixiv.py
+        EOF
+        
+        cat > manifest.yml << EOF
+        applications:
+        - name: pixiv
+          memory: 256M
+          random-route: true
+          buildpacks:
+          - python_buildpack
+        EOF
+        
+        chmod 0755 *
+        
+    - name: Deploy to Cloud Foundry
+      run: |
+        curl -sL "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v7&source=github" | tar -zx cf7
+        
+        ./cf7 login \
+          -a "https://api.us-south.cf.cloud.ibm.com" \
+          -u "${{ secrets.CF_USER_IBM }}" \
+          -p "${{ secrets.CF_PASSWORD_IBM }}" \
+          -o "${{ secrets.CF_ORG_IBM }}" \
+          -s "dev"
+           
+        ./cf7 push
