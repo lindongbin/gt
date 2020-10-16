@@ -1,0 +1,71 @@
+name: get-oracle-state
+
+on:
+  schedule:
+    - cron: "0 22 * * 6"
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install oci
+
+    - name: Create python file
+      run: |
+        cat > oracle.py << EOF
+        import json, time, oci
+        try:
+            config = {
+            "user": "${{ secrets.user }}",
+            "key_content": "${{ secrets.key_content }}",
+            "fingerprint": "${{ secrets.fingerprint }}",
+            "tenancy": "${{ secrets.tenancy }}",
+            "region": "ap-tokyo-1"
+            }
+            database = oci.database.DatabaseClient(config)
+            resp = database.get_autonomous_database("${{ secrets.database }}")
+            resp = str(resp.data)
+            resp = json.loads(resp)
+            resp = resp["display_name"] + ": " +resp["lifecycle_state"]
+            resps = resp
+            compute = oci.core.ComputeClient(config)
+            resp = compute.get_instance("${{ secrets.compute1 }}")
+            resp = str(resp.data)
+            resp = json.loads(resp)
+            resp = resp["display_name"] + ": " +resp["lifecycle_state"]
+            resps = resps + "\n\n" +resp
+            resp = compute.get_instance("${{ secrets.compute2 }}")
+            resp = str(resp.data)
+            resp = json.loads(resp)
+            resp = resp["display_name"] + ": " +resp["lifecycle_state"]
+            resps = resps + "\n\n" +resp
+            with open("README.md","w") as f:
+                f.write(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "\n\n" + resps)
+        except:
+            pass
+        EOF
+
+    - name: Run python file
+      run: |
+        python oracle.py
+
+    - name: Delete python file
+      run: |
+        rm -f oracle.py
+
+    - name: Commit files
+      run: |
+        git config user.name lindongbin
+        git config user.email lin.crk@gmail.com
+        git add "README.md"
+        git commit -m "Update README.md"
+        git push
