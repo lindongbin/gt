@@ -1,0 +1,29 @@
+name: build-fenix
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup Java JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+
+    - name: Build Fenix
+      run: |
+        git clone https://github.com/mozilla-mobile/fenix .
+        sed -i 's/applicationIdSuffix ".firefox"/applicationIdSuffix ".firefox.m"/' app/build.gradle
+        sed -i 's/get() = this == Beta/get() = true/' app/src/main/java/org/mozilla/fenix/Config.kt
+        sed -i 's/get() = this == Debug || this == Nightly/get() = true/' app/src/main/java/org/mozilla/fenix/Config.kt
+        sed -i 's/showSecretDebugMenuThisSession = false/showSecretDebugMenuThisSession = true/' app/src/main/java/org/mozilla/fenix/utils/Settings.kt
+        ./gradlew clean app:assembleRelease
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: "fenix"
+        path: app/build/outputs/apk/release/app-arm*.apk
