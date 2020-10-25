@@ -1,4 +1,4 @@
-import json, re, random, datetime, hashlib, hmac, time, urllib, base64, asyncio, aiohttp, websockets
+import json, re, random, datetime, hashlib, hmac, time, urllib, base64, asyncio, aiohttp
 from enum import Enum
 from lxml import etree
 
@@ -408,12 +408,13 @@ async def alive(websocket):
         await asyncio.sleep(delay)
 
 async def main():
-    async with websockets.connect("ws://0.0.0.0:8090") as websocket:
-        await websocket.send("lindongbin")
-        await websocket.send("8482303")
-        asyncio.get_event_loop().create_task(alive(websocket))
-        while True:
-            recv_data = await websocket.recv()
-            await ws_msg(websocket, recv_data)
+    async with aiohttp.ClientSession() as session:
+        async with session.ws_connect("ws://0.0.0.0:8090") as ws:
+            await ws.send_str("lindongbin")
+            await ws.send_str("8482303")
+            asyncio.get_event_loop().create_task(alive(ws))
+            while True:
+                recv_data = await ws.receive_json()
+                await ws_msg(ws, recv_data)
 
 asyncio.get_event_loop().run_until_complete(main())
