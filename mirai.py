@@ -151,9 +151,9 @@ async def bdbk(bkmsg):
         if page != '':
             bkmsg = page + '\nhttps://baike.baidu.com/item/' + urllib.parse.quote(bkmsg)
             if bkimg:
-                bkmsg = [{"type": "Image", "url": bkimg}, {"type": "PlainText", "msg": bkmsg}]
+                bkmsg = [{"type": "Image", "url": bkimg}, {"type": "Plain", "text": bkmsg}]
             else:
-                bkmsg = [{"type": "PlainText", "msg": bkmsg}]
+                bkmsg = [{"type": "Plain", "text": bkmsg}]
             return bkmsg
     except:
         return
@@ -162,13 +162,18 @@ baike = 0
 pximg = 0
 chatbot = 0
 
-async def ws_msg(websocket, recv_data):
+async def ws_msg(ws, recv_data):
 
     global baike
     global pximg
     global chatbot
 
     recv_data = json.loads(recv_data)
+    if recv_data["type"] == "Event":
+        recv_data = recv_data["event"]
+    else:
+        return
+
     msg = Enum("msg", recv_data)
 
     if msg.type.value == "GroupMessage":
@@ -184,32 +189,32 @@ async def ws_msg(websocket, recv_data):
             hh = 7 - hh
             hh = hh * 3600
             if sender.permission.value == "member":
-                sendmsg = json.dumps({"type": "MuteMember", "bot": msg.bot.value, "group": group.id.value, "member": sender.id.value, "time": hh})
-                await websocket.send(sendmsg)
-                sendmsg = json.dumps({"type": "Recall", "messageSource": source})
-                await websocket.send(sendmsg)
+                sendmsg = {"type": "MuteMember", "content":{"bot": msg.bot.value, "group": group.id.value, "member": sender.id.value, "time": hh}}
+                await ws.send_json(sendmsg)
+                sendmsg = {"type": "Recall", "content":{"messageSource": source}}
+                await ws.send_json(sendmsg)
                 return
 
         for i in message:
             ii = 0
-            if "PlainText" in i.values():
+            if "Plain" in i.values():
                 ii = 1
                 break
 
         if ii == 1:
-
             resp = await atpget(str(sender.id.value))
-            if resp > 0:
-                if sender.permission.value == "member":
-                    sendmsg = json.dumps({"type": "Recall", "messageSource": source})
-                    await websocket.send(sendmsg)
-                    return
+            if resp:
+                if resp > 0:
+                    if sender.permission.value == "member":
+                        sendmsg = {"type": "Recall", "content":{"messageSource": source}}
+                        await ws.send_json(sendmsg)
+                        return
 
             msg_str = ""
             for i in message:
-                if i["type"] == "PlainText":
-                    msg_str =  msg_str + i["msg"]
-            
+                if i["type"] == "Plain":
+                    msg_str =  msg_str + i["text"]
+
             msg_str = re.findall(r"[\u4e00-\u9fa5]", msg_str)
             msg_str = "".join(msg_str)
 
@@ -222,15 +227,16 @@ async def ws_msg(websocket, recv_data):
                 if resp:
                     for i in resp:
                         ii = await atpget(i)
-                        if ii == 0:
-                            if sender.permission.value == "member":
-                                sendmsg = json.dumps({"type": "Recall", "messageSource": source})
-                                await websocket.send(sendmsg)
-                                return
+                        if ii:
+                            if ii == 0:
+                                if sender.permission.value == "member":
+                                    sendmsg = {"type": "Recall", "content":{"messageSource": source}}
+                                    await ws.send_json(sendmsg)
+                                    return
 
             for i in message:
-                if i["type"] == "PlainText":
-                    msg_str = i["msg"]
+                if i["type"] == "Plain":
+                    msg_str = i["text"]
                     break
 
             if sender.id.value == 8482303:
@@ -252,99 +258,51 @@ async def ws_msg(websocket, recv_data):
                 if msg_str == ".关闭色图":
                     pximg = 0
                     return
-                
+
                 if msg_str.startswith(".查询"):
                     atpmsg = msg_str.replace(".查询", "")
                     ii = await atpget(atpmsg)
-                    if ii > 0:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": [{"type": "PlainText", "msg": "存在"}]})
-                        await websocket.send(sendmsg)
-                        return
-                    elif ii == 0:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": [{"type": "PlainText", "msg": "不存在"}]})
-                        await websocket.send(sendmsg)
-                        return
-                    else:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": [{"type": "PlainText", "msg": "错误"}]})
-                        await websocket.send(sendmsg)
-                        return
+                    if ii:
+                        if ii > 0:
+                            sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "存在"}]}}
+                            await ws.send_json(sendmsg)
+                            return
+                        if ii == 0:
+                            sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "不存在"}]}}
+                            await ws.send_json(sendmsg)
+                            return
 
                 if msg_str.startswith(".添加"):
                     atpmsg = msg_str.replace(".添加", "")
                     ii = await atpget(atpmsg)
-                    if ii > 0:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": [{"type": "PlainText", "msg": "已存在"}]})
-                        await websocket.send(sendmsg)
-                        return
-                    elif ii == 0:
-                        ii = await atpadd(atpmsg)
+                    if ii:
                         if ii > 0:
-                            sendmsg = json.dumps({"type": "SendToGroup", 
-                                                  "bot": msg.bot.value,
-                                                  "group": group.id.value,
-                                                  "message": [{"type": "PlainText", "msg": "添加成功"}]})
-                            await websocket.send(sendmsg)
+                            sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "已存在"}]}}
+                            await ws.send_json(sendmsg)
                             return
-                        else:
-                            sendmsg = json.dumps({"type": "SendToGroup", 
-                                                  "bot": msg.bot.value,
-                                                  "group": group.id.value,
-                                                  "message": [{"type": "PlainText", "msg": "添加失败"}]})
-                            await websocket.send(sendmsg)
-                            return
-                    else:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": [{"type": "PlainText", "msg": "错误"}]})
-                        await websocket.send(sendmsg)
-                        return
+                        if ii == 0:
+                            ii = await atpadd(atpmsg)
+                            if ii:
+                                if ii > 0:
+                                    sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "添加成功"}]}}
+                                    await ws.send_json(sendmsg)
+                                    return
 
                 if msg_str.startswith(".删除"):
                     atpmsg = msg_str.replace(".删除", "")
                     ii = await atpget(atpmsg)
-                    if ii == 0:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": [{"type": "PlainText", "msg": "不存在"}]})
-                        await websocket.send(sendmsg)
-                        return
-                    elif ii > 0:
-                        ii = await atpdel(atpmsg)
+                    if ii:
+                        if ii == 0:
+                            sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "不存在"}]}}
+                            await ws.send_json(sendmsg)
+                            return
                         if ii > 0:
-                            sendmsg = json.dumps({"type": "SendToGroup", 
-                                                  "bot": msg.bot.value,
-                                                  "group": group.id.value,
-                                                  "message": [{"type": "PlainText", "msg": "删除成功"}]})
-                            await websocket.send(sendmsg)
-                            return
-                        else:
-                            sendmsg = json.dumps({"type": "SendToGroup", 
-                                                  "bot": msg.bot.value,
-                                                  "group": group.id.value,
-                                                  "message": [{"type": "PlainText", "msg": "删除失败"}]})
-                            await websocket.send(sendmsg)
-                            return
-                    else:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": [{"type": "PlainText", "msg": "错误"}]})
-                        await websocket.send(sendmsg)
-                        return
+                            ii = await atpdel(atpmsg)
+                            if ii:
+                                if ii > 0:
+                                    sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "删除成功"}]}}
+                                    await ws.send_json(sendmsg)
+                                    return
 
             if baike == 1:
                 bktg = 0
@@ -357,11 +315,8 @@ async def ws_msg(websocket, recv_data):
                 if bktg == 1:
                     bkmsg = await bdbk(bkmsg)
                     if bkmsg:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": bkmsg})
-                        await websocket.send(sendmsg)
+                        sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": bkmsg}}
+                        await ws.send_json(sendmsg)
                         return
 
             if chatbot == 1:
@@ -371,38 +326,30 @@ async def ws_msg(websocket, recv_data):
                             action = "ChatBot"
                             params = {"Query": msg_str}
                             resp = await txnlp(action, params)
-                            resp = resp["Response"]["Reply"]
                             if resp:
-                                sendmsg = json.dumps({"type": "SendToGroup", 
-                                                      "bot": msg.bot.value,
-                                                      "group": group.id.value,
-                                                      "message": [{"type": "PlainText", "msg": resp}]})
-                                await websocket.send(sendmsg)
-                                return
+                                resp = resp["Response"]["Reply"]
+                                if resp:
+                                    sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": resp}]}}
+                                    await ws.send_json(sendmsg)
+                                    return
 
             if pximg == 1:
                 if msg_str.startswith("来张"):
                     resp = await pixiv()
                     if resp:
-                        sendmsg = json.dumps({"type": "SendToGroup", 
-                                              "bot": msg.bot.value,
-                                              "group": group.id.value,
-                                              "message": [{"type": "Image", "url": resp}]})
-                        await websocket.send(sendmsg)
+                        sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Image", "url": resp}]}}
+                        await ws.send_json(sendmsg)
                         return
 
-async def alive(websocket):
+async def alive(ws):
     while True:
         hh = datetime.datetime.now().hour + 12
         if hh >= 24:
             hh = hh - 24
         mm = datetime.datetime.now().minute
         resp = "现在是" + str(hh) + "时" + str(mm) + "分"
-        sendmsg = json.dumps({"type": "SendToFriend", 
-                              "bot": 1009383773,
-                              "friend": 8482303,
-                              "message": [{"type": "PlainText", "msg": resp}]})
-        await websocket.send(sendmsg)
+        sendmsg = {"type": "SendToFriend", "content":{"bot": 1009383773, "friend": 8482303, "message": [{"type": "Plain", "text": resp}]}}
+        await ws.send_json(sendmsg)
         delay = random.randint(2, 5)
         delay = delay * 60
         await asyncio.sleep(delay)
@@ -414,7 +361,9 @@ async def main():
             await ws.send_str("8482303")
             asyncio.get_event_loop().create_task(alive(ws))
             while True:
-                recv_data = await ws.receive_json()
-                await ws_msg(ws, recv_data)
+                recv_data = await ws.receive()
+                if recv_data.type == aiohttp.WSMsgType.TEXT:
+                    recv_data = recv_data.data
+                    await ws_msg(ws, recv_data)
 
 asyncio.get_event_loop().run_until_complete(main())
