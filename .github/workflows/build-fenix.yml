@@ -17,7 +17,7 @@ jobs:
       run: |
         git clone https://github.com/mozilla-mobile/fenix .
         sed -i 's/applicationIdSuffix ".firefox"/applicationIdSuffix ".firefox.m"/' app/build.gradle
-        sed -i 's/mozilla_browser_engine_gecko_release/mozilla_browser_engine_gecko_nightly/' app/build.gradle
+        sed -i 's/mozilla_browser_engine_gecko_release/mozilla_browser_engine_gecko_beta/' app/build.gradle
         sed -i 's/get() = this == Beta/get() = true/' app/src/main/java/org/mozilla/fenix/Config.kt
         sed -i 's/get() = this == Debug || this == Nightly/get() = true/' app/src/main/java/org/mozilla/fenix/Config.kt
         sed -i 's/showSecretDebugMenuThisSession = false/showSecretDebugMenuThisSession = true/' app/src/main/java/org/mozilla/fenix/utils/Settings.kt
@@ -27,4 +27,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: "fenix"
-        path: app/build/outputs/apk/release/app-arm*.apk
+        path: app/build/outputs/apk/release/app-arm64*.apk
