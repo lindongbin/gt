@@ -1,0 +1,1 @@
+java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out output.apk input.apk
