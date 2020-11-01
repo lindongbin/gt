@@ -14,13 +14,14 @@ jobs:
         java-version: 11
         
     - name: Install NDK
-      run: echo "y" | sudo /usr/local/lib/android/sdk/tools/bin/sdkmanager --install "ndk;21.0.6113669" --sdk_root=${ANDROID_SDK_ROOT}
+      run: echo "y" | sudo /usr/local/lib/android/sdk/tools/bin/sdkmanager --install "ndk;21.0.6113669" --sdk_root=${ANDROID_SDK_ROOT} >/dev/null
 
     - name: Build Fenix
       run: |
         git clone https://github.com/mozilla-mobile/fenix .
+        git checkout c40b93715fc890d006933d0585ffd07618fe2c4c
         sed -i 's/applicationIdSuffix ".firefox"/applicationIdSuffix ".firefox.m"/' app/build.gradle
-        sed -i 's/mozilla_browser_engine_gecko_release/mozilla_browser_engine_gecko_beta/' app/build.gradle
+        #sed -i 's/mozilla_browser_engine_gecko_release/mozilla_browser_engine_gecko_beta/' app/build.gradle
         sed -i 's/get() = this == Beta/get() = true/' app/src/main/java/org/mozilla/fenix/Config.kt
         sed -i 's/get() = this == Debug || this == Nightly/get() = true/' app/src/main/java/org/mozilla/fenix/Config.kt
         sed -i 's/showSecretDebugMenuThisSession = false/showSecretDebugMenuThisSession = true/' app/src/main/java/org/mozilla/fenix/utils/Settings.kt
