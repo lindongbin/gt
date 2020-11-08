@@ -182,7 +182,7 @@ async def ws_msg(ws, recv_data):
         message = recv_data["message"]
         source = message[0]["id"]
 
-        hh = datetime.datetime.now().hour + 12
+        hh = datetime.datetime.utcnow().hour + 8
         if hh >= 24:
             hh = hh - 24
         if 1 <= hh <= 6:
@@ -195,6 +195,14 @@ async def ws_msg(ws, recv_data):
                 await ws.send_json(sendmsg)
                 return
 
+        resp = await atpget(str(sender.id.value))
+        if isinstance(resp, int):
+            if resp > 0:
+                if sender.permission.value == "member":
+                    sendmsg = {"type": "Recall", "content":{"messageSource": source}}
+                    await ws.send_json(sendmsg)
+                    return
+
         for i in message:
             ii = 0
             if "Plain" in i.values():
@@ -202,13 +210,6 @@ async def ws_msg(ws, recv_data):
                 break
 
         if ii == 1:
-            resp = await atpget(str(sender.id.value))
-            if resp:
-                if resp > 0:
-                    if sender.permission.value == "member":
-                        sendmsg = {"type": "Recall", "content":{"messageSource": source}}
-                        await ws.send_json(sendmsg)
-                        return
 
             msg_str = ""
             for i in message:
@@ -227,7 +228,7 @@ async def ws_msg(ws, recv_data):
                 if resp:
                     for i in resp:
                         ii = await atpget(i)
-                        if ii:
+                        if isinstance(ii, int):
                             if ii == 0:
                                 if sender.permission.value == "member":
                                     sendmsg = {"type": "Recall", "content":{"messageSource": source}}
@@ -262,7 +263,7 @@ async def ws_msg(ws, recv_data):
                 if msg_str.startswith(".查询"):
                     atpmsg = msg_str.replace(".查询", "")
                     ii = await atpget(atpmsg)
-                    if ii:
+                    if isinstance(ii, int):
                         if ii > 0:
                             sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "存在"}]}}
                             await ws.send_json(sendmsg)
@@ -275,14 +276,14 @@ async def ws_msg(ws, recv_data):
                 if msg_str.startswith(".添加"):
                     atpmsg = msg_str.replace(".添加", "")
                     ii = await atpget(atpmsg)
-                    if ii:
+                    if isinstance(ii, int):
                         if ii > 0:
                             sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "已存在"}]}}
                             await ws.send_json(sendmsg)
                             return
                         if ii == 0:
                             ii = await atpadd(atpmsg)
-                            if ii:
+                            if isinstance(ii, int):
                                 if ii > 0:
                                     sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "添加成功"}]}}
                                     await ws.send_json(sendmsg)
@@ -291,14 +292,14 @@ async def ws_msg(ws, recv_data):
                 if msg_str.startswith(".删除"):
                     atpmsg = msg_str.replace(".删除", "")
                     ii = await atpget(atpmsg)
-                    if ii:
+                    if isinstance(ii, int):
                         if ii == 0:
                             sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "不存在"}]}}
                             await ws.send_json(sendmsg)
                             return
                         if ii > 0:
                             ii = await atpdel(atpmsg)
-                            if ii:
+                            if isinstance(ii, int):
                                 if ii > 0:
                                     sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Plain", "text": "删除成功"}]}}
                                     await ws.send_json(sendmsg)
@@ -337,13 +338,13 @@ async def ws_msg(ws, recv_data):
                 if msg_str.startswith("来张"):
                     resp = await pixiv()
                     if resp:
-                        sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "Image", "url": resp}]}}
+                        sendmsg = {"type": "SendToGroup", "content":{"bot": msg.bot.value, "group": group.id.value, "message": [{"type": "FlashImage", "image": {"url": resp}}]}}
                         await ws.send_json(sendmsg)
                         return
 
 async def alive(ws):
     while True:
-        hh = datetime.datetime.now().hour + 12
+        hh = datetime.datetime.utcnow().hour + 8
         if hh >= 24:
             hh = hh - 24
         mm = datetime.datetime.now().minute
