@@ -14,7 +14,7 @@ jobs:
         curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/v0.9.30/go-cqhttp-v0.9.30-linux-amd64.tar.gz" | tar -zx go-cqhttp
         
         cat > device.json << EOF
-        {"display":"MIRAI.871355.001","product":"mirai","device":"mirai","board":"mirai","model":"mirai","finger_print":"mamoe/mirai/mirai:10/MIRAI.200122.001/5768199:user/release-keys","boot_id":"e3ddb090-487e-0416-6c1a-bee0c59d45d6","proc_version":"Linux version 3.0.31-5aQF5uaS (android-build@xxx.xxx.xxx.xxx.com)","protocol":1,"imei":"531686398009843"}
+        {"display":"MIRAI.871355.001","product":"mirai","device":"mirai","board":"mirai","model":"mirai","finger_print":"mamoe/mirai/mirai:10/MIRAI.200122.001/5768199:user/release-keys","boot_id":"e3ddb090-487e-0416-6c1a-bee0c59d45d6","proc_version":"Linux version 3.0.31-5aQF5uaS (android-build@xxx.xxx.xxx.xxx.com)","protocol":0,"imei":"531686398009843"}
         EOF
         
         cat > config.json << EOF
@@ -27,7 +27,7 @@ jobs:
           "access_token": "",
           "relogin": {
             "enabled": true,
-            "relogin_delay": 3,
+            "relogin_delay": 1,
             "max_relogin_times": 0
           },
           "_rate_limit": {
@@ -46,9 +46,9 @@ jobs:
             "post_urls": {}
           },
           "ws_config": {
-            "enabled": false,
-            "host": "0.0.0.0",
-            "port": 6700
+            "enabled": true,
+            "host": "127.0.0.1",
+            "port": 8090
           },
           "ws_reverse_servers": [
             {
@@ -71,15 +71,74 @@ jobs:
         }
         EOF
         
+        cat > requirements.txt << EOF
+        aiohttp
+        EOF
+        
+        cat > mirai.py << EOF
+        import os, json, random, base64, asyncio, aiohttp
+        async def pixiv():
+            try:
+                async with aiohttp.ClientSession() as session:
+                    pix = random.randint(1, 10)
+                    url = "https://www.pixiv.net/ranking.php?mode=daily&content=illust&p=" + str(pix) +"&format=json"
+                    async with session.get(url=url) as req:
+                        resp = await req.read()
+                    pix = random.randint(0, 49)
+                    resp = json.loads(resp)["contents"][pix]["illust_id"]
+                    url = "https://www.pixiv.net/ajax/illust/" + str(resp) + "/pages"
+                    async with session.get(url=url) as req:
+                        resp = await req.read()
+                    resp = json.loads(resp)["body"][0]["urls"]["original"]
+                    headers = {'Referer':'https://app-api.pixiv.net/'}
+                    async with session.get(url=resp, headers=headers) as req:
+                        resp = await req.read()
+                resp = base64.b64encode(resp).decode()
+                resp = "base64://" + resp
+                return resp
+            except:
+                return
+        async def ws_group(ws, recv_data):
+            message = recv_data["message"]
+            group = recv_data["group_id"]
+            if message.startswith("来张"):
+                resp = await pixiv()
+                if resp:
+                    sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": [{"type": "image", "data": {"file": resp}}]}}
+                    await ws.send_json(sendmsg)
+                    return
+        async def main():
+            os.system('./go-cqhttp &')
+            await asyncio.sleep(60)
+            async with aiohttp.ClientSession() as session:
+                async with session.ws_connect("ws://127.0.0.1:8090") as ws:
+                    while True:
+                        recv_data = await ws.receive()
+                        if recv_data.type == aiohttp.WSMsgType.TEXT:
+                            recv_data = json.loads(recv_data.data)
+                            if "post_type" in recv_data:
+                                if recv_data["post_type"] == "message":
+                                    if recv_data["sub_type"] == "normal":
+                                        await ws_group(ws, recv_data)
+                                if recv_data["post_type"] == "request":
+                                    if recv_data["sub_type"] == "invite":
+                                        sendmsg = {"action": ".handle_quick_operation", "params": {"context": recv_data, "operation": {"approve": True}}}
+                                        await ws.send_json(sendmsg)
+        asyncio.get_event_loop().run_until_complete(main())
+        EOF
+        
+        cat > Procfile << EOF
+        web: python mirai.py
+        EOF
+        
         cat > manifest.yml << EOF
         applications:
         - name: mirai
           memory: 256M
           no-route: true
           health-check-type: process
-          command: ./go-cqhttp
           buildpacks:
-          - binary_buildpack
+          - python_buildpack
         EOF
         
         chmod 0755 *
