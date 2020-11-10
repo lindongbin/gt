@@ -121,22 +121,27 @@ jobs:
                 await asyncio.sleep(delay)
         async def main():
             os.system('./go-cqhttp &')
-            await asyncio.sleep(60)
-            async with aiohttp.ClientSession() as session:
-                async with session.ws_connect("ws://127.0.0.1:8090") as ws:
-                    asyncio.get_event_loop().create_task(alive(ws))
-                    while True:
-                        recv_data = await ws.receive()
-                        if recv_data.type == aiohttp.WSMsgType.TEXT:
-                            recv_data = json.loads(recv_data.data)
-                            if "post_type" in recv_data:
-                                if recv_data["post_type"] == "message":
-                                    if recv_data["sub_type"] == "normal":
-                                        await ws_group(ws, recv_data)
-                                if recv_data["post_type"] == "request":
-                                    if recv_data["sub_type"] == "invite":
-                                        sendmsg = {"action": ".handle_quick_operation", "params": {"context": recv_data, "operation": {"approve": True}}}
-                                        await ws.send_json(sendmsg)
+            retry = True
+            while retry == True:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.ws_connect("ws://127.0.0.1:8090") as ws:
+                            asyncio.get_event_loop().create_task(alive(ws))
+                            while True:
+                                recv_data = await ws.receive()
+                                if recv_data.type == aiohttp.WSMsgType.TEXT:
+                                    recv_data = json.loads(recv_data.data)
+                                    if "post_type" in recv_data:
+                                        if recv_data["post_type"] == "message":
+                                            if recv_data["sub_type"] == "normal":
+                                                await ws_group(ws, recv_data)
+                                        if recv_data["post_type"] == "request":
+                                            if recv_data["sub_type"] == "invite":
+                                                sendmsg = {"action": ".handle_quick_operation", "params": {"context": recv_data, "operation": {"approve": True}}}
+                                                await ws.send_json(sendmsg)
+                except:
+                    await asyncio.sleep(5)
+                    retry = True
         asyncio.get_event_loop().run_until_complete(main())
         EOF
         
