@@ -353,18 +353,24 @@ async def alive(ws):
         await asyncio.sleep(delay)
 
 async def main():
-    async with aiohttp.ClientSession() as session:
-        async with session.ws_connect("ws://127.0.0.1:8090") as ws:
-            asyncio.get_event_loop().create_task(alive(ws))
-            while True:
-                recv_data = await ws.receive()
-                if recv_data.type == aiohttp.WSMsgType.TEXT:
-                    recv_data = json.loads(recv_data.data)
-                    if "post_type" in recv_data:
-                        if recv_data["post_type"] == "message":
-                            if recv_data["sub_type"] == "normal":
-                                await ws_group(ws, recv_data)
-                        if recv_data["post_type"] == "notice":
-                            await ws_event(ws, recv_data)
+    retry = True
+    while retry == True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.ws_connect("ws://127.0.0.1:8090") as ws:
+                    asyncio.get_event_loop().create_task(alive(ws))
+                    while True:
+                        recv_data = await ws.receive()
+                        if recv_data.type == aiohttp.WSMsgType.TEXT:
+                            recv_data = json.loads(recv_data.data)
+                            if "post_type" in recv_data:
+                                if recv_data["post_type"] == "message":
+                                    if recv_data["sub_type"] == "normal":
+                                        await ws_group(ws, recv_data)
+                                if recv_data["post_type"] == "notice":
+                                    await ws_event(ws, recv_data)
+        except:
+            await asyncio.sleep(5)
+            retry = True
 
 asyncio.get_event_loop().run_until_complete(main())
