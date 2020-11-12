@@ -2,7 +2,7 @@ name: auto-push-firefox
 
 on:
   schedule:
-    - cron: "0 0 * * 2-4"
+    - cron: "0 0 * * 2-5"
 
 jobs:
   build:
@@ -29,6 +29,12 @@ jobs:
         url64 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win64/zh-CN/Firefox%20Setup%20" + resp + ".exe"
         resp32 = "firefox-" + resp + "-win32.exe"
         resp64 = "firefox-" + resp + "-win64.exe"
+        resp = urllib.request.urlopen("https://api.github.com/repos/mozilla-mobile/fenix/releases/latest")
+        resp = json.loads(resp.read().decode())["tag_name"].replace("v", "")
+        url32m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-armeabi-v7a.apk"
+        url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
+        resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
+        resp64m = "fenix-" + resp + "-arm64-v8a.apk"
         lzy = LanZouCloud()
         cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
         if lzy.login_by_cookie(cookie) == LanZouCloud.SUCCESS:
@@ -39,6 +45,12 @@ jobs:
             if files.find_by_name(resp64) is None:
                 urllib.request.urlretrieve(url64, resp64)
                 lzy.upload_file(resp64, ${{ secrets.lzy_folder_id }})
+            if files.find_by_name(resp32m) is None:
+                urllib.request.urlretrieve(url32m, resp32m)
+                lzy.upload_file(resp32m, ${{ secrets.lzy_folder_id }})
+            if files.find_by_name(resp64m) is None:
+                urllib.request.urlretrieve(url64m, resp64m)
+                lzy.upload_file(resp64m, ${{ secrets.lzy_folder_id }})
         EOF
         
     - name: Run python file
