@@ -1,4 +1,4 @@
-import json, re, random, datetime, hashlib, hmac, time, urllib, base64, asyncio, aiohttp
+import json, re, random, datetime, hashlib, hmac, time, urllib, base64, asyncio, aiohttp, traceback
 from lxml import etree
 
 async def atpget(id):
@@ -395,6 +395,7 @@ async def main():
                         recv_data = await ws.receive()
                         await ws_handle(ws, recv_data)
         except:
+            traceback.print_exc()
             await asyncio.sleep(5)
             retry = True
 
