@@ -317,6 +317,8 @@ async def ws_group(ws, recv_data):
                 await ws.send_json(sendmsg)
                 return
 
+group_id = 0
+
 async def ws_event(ws, recv_data):
 
     if recv_data["notice_type"] == "group_decrease":
@@ -338,6 +340,12 @@ async def ws_event(ws, recv_data):
                 sendmsg = {"action": "set_group_kick", "params": {"group_id": group, "user_id": sender, "message":"禁止加入"}}
                 await ws.send_json(sendmsg)
                 return
+            if resp == 0:
+                global group_id
+                group_id = group
+                sendmsg = {"action": "get_stranger_info", "params": {"user_id": sender, "no_cache": True}}
+                await ws.send_json(sendmsg)
+                return
 
 async def alive(ws):
     while True:
@@ -352,6 +360,29 @@ async def alive(ws):
         delay = delay * 60
         await asyncio.sleep(delay)
 
+async def ws_handle(ws, recv_data):
+    if recv_data.type == aiohttp.WSMsgType.TEXT:
+        recv_data = json.loads(recv_data.data)
+        if "post_type" in recv_data:
+            if recv_data["post_type"] == "message":
+                await ws_group(ws, recv_data)
+                return
+            if recv_data["post_type"] == "notice":
+                await ws_event(ws, recv_data)
+                return
+        if "data" in recv_data:
+            if isinstance(recv_data["data"], dict):
+                if "level" in recv_data["data"]:
+                    level = recv_data["data"]["level"]
+                    sender = recv_data["data"]["user_id"]
+                    if isinstance(level, int):
+                        global group_id
+                        if level < 4:
+                            sendmsg = {"action": "set_group_kick", "params": {"group_id": group_id, "user_id": sender, "message": "禁止加入"}}
+                            await ws.send_json(sendmsg)
+                            await atpadd(str(sender))
+                            return
+
 async def main():
     retry = True
     while retry == True:
@@ -361,14 +392,7 @@ async def main():
                     asyncio.get_event_loop().create_task(alive(ws))
                     while True:
                         recv_data = await ws.receive()
-                        if recv_data.type == aiohttp.WSMsgType.TEXT:
-                            recv_data = json.loads(recv_data.data)
-                            if "post_type" in recv_data:
-                                if recv_data["post_type"] == "message":
-                                    if recv_data["sub_type"] == "normal":
-                                        await ws_group(ws, recv_data)
-                                if recv_data["post_type"] == "notice":
-                                    await ws_event(ws, recv_data)
+                        await ws_handle(ws, recv_data)
         except:
             await asyncio.sleep(5)
             retry = True
