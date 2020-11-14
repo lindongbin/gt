@@ -365,8 +365,9 @@ async def ws_handle(ws, recv_data):
         recv_data = json.loads(recv_data.data)
         if "post_type" in recv_data:
             if recv_data["post_type"] == "message":
-                await ws_group(ws, recv_data)
-                return
+                if recv_data["sub_type"] == "normal":
+                    await ws_group(ws, recv_data)
+                    return
             if recv_data["post_type"] == "notice":
                 await ws_event(ws, recv_data)
                 return
