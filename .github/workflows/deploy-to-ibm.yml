@@ -76,7 +76,7 @@ jobs:
         EOF
         
         cat > mirai.py << EOF
-        import os, json, random, base64, asyncio, aiohttp, datetime
+        import os, json, random, base64, asyncio, aiohttp
         async def pixiv():
             try:
                 async with aiohttp.ClientSession() as session:
@@ -98,27 +98,6 @@ jobs:
                 return resp
             except:
                 return
-        async def ws_group(ws, recv_data):
-            message = recv_data["message"]
-            group = recv_data["group_id"]
-            if message.startswith("来张"):
-                resp = await pixiv()
-                if resp:
-                    sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": [{"type": "image", "data": {"file": resp}}]}}
-                    await ws.send_json(sendmsg)
-                    return
-        async def alive(ws):
-            while True:
-                hh = datetime.datetime.utcnow().hour + 8
-                if hh >= 24:
-                    hh = hh - 24
-                mm = datetime.datetime.now().minute
-                resp = "现在是" + str(hh) + "时" + str(mm) + "分"
-                sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": resp}}
-                await ws.send_json(sendmsg)
-                delay = random.randint(2, 5)
-                delay = delay * 60
-                await asyncio.sleep(delay)
         async def main():
             os.system('./go-cqhttp &')
             retry = True
@@ -126,19 +105,14 @@ jobs:
                 try:
                     async with aiohttp.ClientSession() as session:
                         async with session.ws_connect("ws://127.0.0.1:8090") as ws:
-                            asyncio.get_event_loop().create_task(alive(ws))
                             while True:
-                                recv_data = await ws.receive()
-                                if recv_data.type == aiohttp.WSMsgType.TEXT:
-                                    recv_data = json.loads(recv_data.data)
-                                    if "post_type" in recv_data:
-                                        if recv_data["post_type"] == "message":
-                                            if recv_data["sub_type"] == "normal":
-                                                await ws_group(ws, recv_data)
-                                        if recv_data["post_type"] == "request":
-                                            if recv_data["sub_type"] == "invite":
-                                                sendmsg = {"action": ".handle_quick_operation", "params": {"context": recv_data, "operation": {"approve": True}}}
-                                                await ws.send_json(sendmsg)
+                                resp = await pixiv()
+                                if resp:
+                                    sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "image", "data": {"file": resp}}]}}
+                                    await ws.send_json(sendmsg)
+                                delay = random.randint(2, 5)
+                                delay = delay * 60
+                                await asyncio.sleep(delay)
                 except:
                     await asyncio.sleep(5)
                     retry = True
