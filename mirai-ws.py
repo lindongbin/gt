@@ -112,7 +112,7 @@ async def pixiv():
             url = "https://www.pixiv.net/ajax/illust/" + str(resp) + "/pages"
             async with session.get(url=url) as req:
                 resp = await req.read()
-            resp = json.loads(resp)["body"][0]["urls"]["original"]
+            resp = json.loads(resp)["body"][0]["urls"]["regular"]
             headers = {'Referer':'https://app-api.pixiv.net/'}
             async with session.get(url=resp, headers=headers) as req:
                 resp = await req.read()
@@ -157,130 +157,105 @@ async def bdbk(bkmsg):
     except:
         return
 
-baike = 0
-pximg = 0
-chatbot = 0
-
 async def ws_group(ws, recv_data):
 
-    global baike
-    global pximg
-    global chatbot
+    if recv_data["sub_type"] == "normal":
 
-    group = recv_data["group_id"]
-    sender = recv_data["sender"]["user_id"]
-    message = recv_data["message"]
-    source = recv_data["message_id"]
-    bot = recv_data["self_id"]
-    permission = recv_data["sender"]["role"]
+        group = recv_data["group_id"]
+        sender = recv_data["sender"]["user_id"]
+        message = recv_data["message"]
+        source = recv_data["message_id"]
+        bot = recv_data["self_id"]
+        permission = recv_data["sender"]["role"]
 
-    hh = datetime.datetime.utcnow().hour + 8
-    if hh >= 24:
-        hh = hh - 24
-    if 1 <= hh <= 6:
-        hh = 7 - hh
-        hh = hh * 3600
-        if permission == "member":
-            sendmsg = {"action": "set_group_ban", "params": {"group_id": group, "user_id": sender, "duration": hh}}
-            await ws.send_json(sendmsg)
-            sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
-            await ws.send_json(sendmsg)
-            return
-
-    resp = await atpget(str(sender))
-    if isinstance(resp, int):
-        if resp > 0:
+        hh = datetime.datetime.utcnow().hour + 8
+        if hh >= 24:
+            hh = hh - 24
+        if 1 <= hh <= 6:
+            hh = 7 - hh
+            hh = hh * 3600
             if permission == "member":
-                sendmsg = {"action": "set_group_kick", "params": {"group_id": group, "user_id": sender, "message":"禁止加入"}}
+                sendmsg = {"action": "set_group_ban", "params": {"group_id": group, "user_id": sender, "duration": hh}}
+                await ws.send_json(sendmsg)
+                sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
                 await ws.send_json(sendmsg)
                 return
 
-    if sender == 8482303:
-        if message == ".开启百科":
-            baike = 1
-            return
-        if message == ".关闭百科":
-            baike = 0
-            return
-        if message == ".开启闲聊":
-            chatbot = 1
-            return
-        if message == ".关闭闲聊":
-            chatbot = 0
-            return
-        if message == ".开启色图":
-            pximg = 1
-            return
-        if message == ".关闭色图":
-            pximg = 0
-            return
-
-        if message.startswith(".查询"):
-            atpmsg = message.replace(".查询", "")
-            ii = await atpget(atpmsg)
-            if isinstance(ii, int):
-                if ii > 0:
-                    sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "存在"}}
-                    await ws.send_json(sendmsg)
-                    return
-                if ii == 0:
-                    sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "不存在"}}
+        resp = await atpget(str(sender))
+        if isinstance(resp, int):
+            if resp > 0:
+                if permission == "member":
+                    sendmsg = {"action": "set_group_kick", "params": {"group_id": group, "user_id": sender, "message":"禁止加入"}}
                     await ws.send_json(sendmsg)
                     return
 
-        if message.startswith(".添加"):
-            atpmsg = message.replace(".添加", "")
-            ii = await atpget(atpmsg)
-            if isinstance(ii, int):
-                if ii > 0:
-                    sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "已存在"}}
-                    await ws.send_json(sendmsg)
-                    return
-                if ii == 0:
-                    ii = await atpadd(atpmsg)
-                    if isinstance(ii, int):
-                        if ii > 0:
-                            sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "添加成功"}}
-                            await ws.send_json(sendmsg)
-                            return
+        if sender == 8482303:
 
-        if message.startswith(".删除"):
-            atpmsg = message.replace(".删除", "")
-            ii = await atpget(atpmsg)
-            if isinstance(ii, int):
-                if ii == 0:
-                    sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "不存在"}}
-                    await ws.send_json(sendmsg)
-                    return
-                if ii > 0:
-                    ii = await atpdel(atpmsg)
-                    if isinstance(ii, int):
-                        if ii > 0:
-                            sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "删除成功"}}
-                            await ws.send_json(sendmsg)
-                            return
+            if message.startswith(".查询"):
+                atpmsg = message.replace(".查询", "")
+                ii = await atpget(atpmsg)
+                if isinstance(ii, int):
+                    if ii > 0:
+                        sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "存在"}}
+                        await ws.send_json(sendmsg)
+                        return
+                    if ii == 0:
+                        sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "不存在"}}
+                        await ws.send_json(sendmsg)
+                        return
 
-    msg_str = re.findall(r"[\u4e00-\u9fa5]", message)
-    msg_str = "".join(msg_str)
-
-    if msg_str != "":
-        action = "SensitiveWordsRecognition"
-        params = {"Text": msg_str}
-        resp = await txnlp(action, params)
-
-        if "SensitiveWords" in resp["Response"]:
-            resp = resp["Response"]["SensitiveWords"]
-            if resp:
-                for i in resp:
-                    ii = await atpget(i)
-                    if isinstance(ii, int):
-                        if ii == 0:
-                            if permission == "member":
-                                sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
+            if message.startswith(".添加"):
+                atpmsg = message.replace(".添加", "")
+                ii = await atpget(atpmsg)
+                if isinstance(ii, int):
+                    if ii > 0:
+                        sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "已存在"}}
+                        await ws.send_json(sendmsg)
+                        return
+                    if ii == 0:
+                        ii = await atpadd(atpmsg)
+                        if isinstance(ii, int):
+                            if ii > 0:
+                                sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "添加成功"}}
                                 await ws.send_json(sendmsg)
                                 return
 
-    if baike == 1:
+            if message.startswith(".删除"):
+                atpmsg = message.replace(".删除", "")
+                ii = await atpget(atpmsg)
+                if isinstance(ii, int):
+                    if ii == 0:
+                        sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "不存在"}}
+                        await ws.send_json(sendmsg)
+                        return
+                    if ii > 0:
+                        ii = await atpdel(atpmsg)
+                        if isinstance(ii, int):
+                            if ii > 0:
+                                sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": "删除成功"}}
+                                await ws.send_json(sendmsg)
+                                return
+
+        msg_str = re.findall(r"[\u4e00-\u9fa5]", message)
+        msg_str = "".join(msg_str)
+
+        if msg_str != "":
+            action = "SensitiveWordsRecognition"
+            params = {"Text": msg_str}
+            resp = await txnlp(action, params)
+
+            if "SensitiveWords" in resp["Response"]:
+                resp = resp["Response"]["SensitiveWords"]
+                if resp:
+                    for i in resp:
+                        ii = await atpget(i)
+                        if isinstance(ii, int):
+                            if ii == 0:
+                                if permission == "member":
+                                    sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
+                                    await ws.send_json(sendmsg)
+                                    return
+
         bktg = 0
         bkkw = ["百科", "是啥", "啥是", "是谁", "谁是", "是什么", "什么是"]
         for kw in bkkw:
@@ -295,7 +270,6 @@ async def ws_group(ws, recv_data):
                 await ws.send_json(sendmsg)
                 return
 
-    if chatbot == 1:
         atbot = "[CQ:at,qq=" + str(bot) +"]"
         if message.find(atbot) > -1:
             msg_str = message.replace(atbot, "")
@@ -309,7 +283,6 @@ async def ws_group(ws, recv_data):
                     await ws.send_json(sendmsg)
                     return
 
-    if pximg == 1:
         if message.startswith("来张"):
             resp = await pixiv()
             if resp:
@@ -365,9 +338,8 @@ async def ws_handle(ws, recv_data):
         recv_data = json.loads(recv_data.data)
         if "post_type" in recv_data:
             if recv_data["post_type"] == "message":
-                if recv_data["sub_type"] == "normal":
-                    await ws_group(ws, recv_data)
-                    return
+                await ws_group(ws, recv_data)
+                return
             if recv_data["post_type"] == "notice":
                 await ws_event(ws, recv_data)
                 return
