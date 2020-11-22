@@ -85,16 +85,19 @@ jobs:
                     async with session.get(url=url) as req:
                         resp = await req.read()
                     pix = random.randint(0, 49)
-                    resp = json.loads(resp)["contents"][pix]["illust_id"]
-                    url = "https://www.pixiv.net/ajax/illust/" + str(resp) + "/pages"
+                    illust_id = json.loads(resp)["contents"][pix]["illust_id"]
+                    title = json.loads(resp)["contents"][pix]["title"]
+                    user_name = json.loads(resp)["contents"][pix]["user_name"]
+                    url = "https://www.pixiv.net/ajax/illust/" + str(illust_id) + "/pages"
                     async with session.get(url=url) as req:
                         resp = await req.read()
-                    resp = json.loads(resp)["body"][0]["urls"]["original"]
+                    resp = json.loads(resp)["body"][0]["urls"]["regular"]
                     headers = {'Referer':'https://app-api.pixiv.net/'}
                     async with session.get(url=resp, headers=headers) as req:
                         resp = await req.read()
                 resp = base64.b64encode(resp).decode()
                 resp = "base64://" + resp
+                resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：https://www.pixiv.net/artworks/" + str(illust_id)}}, {"type": "image", "data": {"file": resp}}]}}
                 return resp
             except:
                 return
@@ -108,8 +111,7 @@ jobs:
                             while True:
                                 resp = await pixiv()
                                 if resp:
-                                    sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "image", "data": {"file": resp}}]}}
-                                    await ws.send_json(sendmsg)
+                                    await ws.send_json(resp)
                                 delay = random.randint(2, 5)
                                 delay = delay * 60
                                 await asyncio.sleep(delay)
