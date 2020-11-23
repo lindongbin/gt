@@ -76,7 +76,8 @@ jobs:
         EOF
         
         cat > mirai.py << EOF
-        import os, json, random, base64, asyncio, aiohttp
+        import os, json, random, asyncio, aiohttp
+        img = "pixiv.png"
         async def pixiv():
             try:
                 async with aiohttp.ClientSession() as session:
@@ -91,13 +92,17 @@ jobs:
                     url = "https://www.pixiv.net/ajax/illust/" + str(illust_id) + "/pages"
                     async with session.get(url=url) as req:
                         resp = await req.read()
-                    resp = json.loads(resp)["body"][0]["urls"]["regular"]
+                    resp = json.loads(resp)["body"][0]["urls"]["original"]
+                    global img
+                    if os.path.exists(img):
+                        os.remove(img)
+                    img = resp.split("/")[-1]
                     headers = {'Referer':'https://app-api.pixiv.net/'}
                     async with session.get(url=resp, headers=headers) as req:
                         resp = await req.read()
-                resp = base64.b64encode(resp).decode()
-                resp = "base64://" + resp
-                resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：https://www.pixiv.net/artworks/" + str(illust_id)}}, {"type": "image", "data": {"file": resp}}]}}
+                        with open(img, "wb") as f:
+                            f.write(resp)
+                resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：https://www.pixiv.net/artworks/" + str(illust_id)}}, {"type": "image", "data": {"file": "file:////app/" + img}}]}}
                 return resp
             except:
                 return
