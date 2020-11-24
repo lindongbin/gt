@@ -134,11 +134,11 @@ jobs:
                                 hh = datetime.datetime.utcnow().hour + 8
                                 if hh >= 24:
                                     hh = hh - 24
-                                if 8 <= hh <= 9:
+                                if 7 <= hh <= 24:
                                     resp = await chkver()
                                     if resp != "":
                                         await ws.send_json(resp)
-                                await asyncio.sleep(300)
+                                await asyncio.sleep(1800)
                 except:
                     await asyncio.sleep(5)
                     retry = True
