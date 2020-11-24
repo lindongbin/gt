@@ -1,0 +1,168 @@
+name: deploy-to-okteto
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Prepare for Deployment
+      run: |
+        curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/v0.9.30/go-cqhttp-v0.9.30-linux-amd64.tar.gz" | tar -zx go-cqhttp
+        
+        cat > device.json << EOF
+        {"display":"MIRAI.871355.001","product":"mirai","device":"mirai","board":"mirai","model":"mirai","finger_print":"mamoe/mirai/mirai:10/MIRAI.200122.001/5768199:user/release-keys","boot_id":"e3ddb090-487e-0416-6c1a-bee0c59d45d6","proc_version":"Linux version 3.0.31-5aQF5uaS (android-build@xxx.xxx.xxx.xxx.com)","protocol":1,"imei":"531686398009843"}
+        EOF
+        
+        cat > config.json << EOF
+        {
+          "uin": ${{ secrets.CF_QQID_IBM }},
+          "password": "${{ secrets.CF_QQPW_IBM }}",
+          "encrypt_password": false,
+          "password_encrypted": "",
+          "enable_db": false,
+          "access_token": "",
+          "relogin": {
+            "enabled": true,
+            "relogin_delay": 1,
+            "max_relogin_times": 0
+          },
+          "_rate_limit": {
+            "enabled": false,
+            "frequency": 1,
+            "bucket_size": 1
+          },
+          "ignore_invalid_cqcode": false,
+          "force_fragmented": false,
+          "heartbeat_interval": 0,
+          "http_config": {
+            "enabled": false,
+            "host": "0.0.0.0",
+            "port": 5700,
+            "timeout": 0,
+            "post_urls": {}
+          },
+          "ws_config": {
+            "enabled": true,
+            "host": "127.0.0.1",
+            "port": 8090
+          },
+          "ws_reverse_servers": [
+            {
+              "enabled": false,
+              "reverse_url": "ws://you_websocket_universal.server",
+              "reverse_api_url": "ws://you_websocket_api.server",
+              "reverse_event_url": "ws://you_websocket_event.server",
+              "reverse_reconnect_interval": 3000
+            }
+          ],
+          "post_message_format": "string",
+          "debug": false,
+          "log_level": "",
+          "web_ui": {
+            "enabled": false,
+            "host": "127.0.0.1",
+            "web_ui_port": 9999,
+            "web_input": false
+          }
+        }
+        EOF
+        
+        cat > requirements.txt << EOF
+        aiohttp
+        lanzou-api
+        EOF
+        
+        cat > mirai.py << EOF
+        import os, json, datetime, asyncio, aiohttp
+        from lanzou.api import LanZouCloud
+        fstpc = 0
+        fstmo = 0
+        pcver = ""
+        mover = ""
+        async def chkver():
+            global fstpc
+            global fstmo
+            global pcver
+            global mover
+            lzy = LanZouCloud()
+            cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
+            if lzy.login_by_cookie(cookie) == LanZouCloud.SUCCESS:
+                files = lzy.get_file_list(${{ secrets.lzy_folder_id }})
+                async with aiohttp.ClientSession() as session:
+                    url = "https://product-details.mozilla.org/1.0/firefox_versions.json"
+                    async with session.get(url=url) as req:
+                        resp = await req.read()
+                    resp = json.loads(resp)["LATEST_FIREFOX_VERSION"]
+                    if fstpc == 0:
+                        pcver = resp
+                        fstpc = 1
+                    resp32 = "firefox-" + resp + "-win32.exe"
+                    resp64 = "firefox-" + resp + "-win64.exe"
+                    sendmsg = ""
+                    if pcver != resp and files.find_by_name(resp32) and files.find_by_name(resp64):
+                        sendmsg = sendmsg + "国际版火狐" + resp +"已发布\n"
+                        pcver = resp
+                    url = "https://api.github.com/repos/mozilla-mobile/fenix/releases/latest"
+                    async with session.get(url=url) as req:
+                        resp = await req.read()
+                    resp = json.loads(resp)["tag_name"].replace("v", "")
+                    if resp.find("rc") == -1:
+                        if fstmo == 0:
+                            mover = resp
+                            fstmo = 1
+                        resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
+                        resp64m = "fenix-" + resp + "-arm64-v8a.apk"
+                        if resp.find("rc") == -1 and mover != resp and files.find_by_name(resp32m) and files.find_by_name(resp64m):
+                            sendmsg = sendmsg + "安卓版火狐" + resp +"已发布\n"
+                            mover = resp
+                        if sendmsg != "":
+                            sendmsg = "\n" + sendmsg + "下载地址：https://url.cn/SpBzW5wi"
+                            sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.ok_group }}, "message": [{"type": "at", "data": {"qq": "all"}}, {"type": "text", "data": {"text": sendmsg}}]}}
+                    return sendmsg
+        async def main():
+            os.system('./go-cqhttp &')
+            retry = True
+            while retry == True:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.ws_connect("ws://127.0.0.1:8090") as ws:
+                            while True:
+                                hh = datetime.datetime.utcnow().hour + 8
+                                if hh >= 24:
+                                    hh = hh - 24
+                                if 8 <= hh <= 9:
+                                    resp = await chkver()
+                                    if resp != "":
+                                        await ws.send_json(resp)
+                                await asyncio.sleep(300)
+                except:
+                    await asyncio.sleep(5)
+                    retry = True
+        asyncio.get_event_loop().run_until_complete(main())
+        EOF
+        
+        cat > Dockerfile << EOF
+        FROM python:slim
+        COPY . .
+        RUN pip install --no-cache-dir -r requirements.txt
+        CMD python mirai.py
+        EOF
+        
+        cat > okteto.yml << EOF
+        name: mirai
+        image: okteto.dev/mirai:golang
+        sync:
+          - .:/mirai
+        EOF
+        
+    - name: Deploy to Okteto
+      run: |
+        curl https://get.okteto.com -sSfL | sh
+        okteto login --token=${{ secrets.ok_token }}
+        okteto build -t registry.cloud.okteto.net/lindongbin/mirai:golang .
+        okteto namespace lindongbin
+        echo "y" | okteto push
