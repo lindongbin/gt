@@ -123,6 +123,18 @@ jobs:
                         sendmsg = "\n" + sendmsg + "下载地址：https://url.cn/SpBzW5wi"
                         sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.ok_group }}, "message": [{"type": "at", "data": {"qq": "all"}}, {"type": "text", "data": {"text": sendmsg}}]}}
                     return sendmsg
+        async def alive(ws):
+            while True:
+                hh = datetime.datetime.utcnow().hour + 8
+                if hh >= 24:
+                    hh = hh - 24
+                mm = datetime.datetime.now().minute
+                resp = "现在是" + str(hh) + "时" + str(mm) + "分"
+                sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.ok_alive }}, "message": resp}}
+                await ws.send_json(sendmsg)
+                delay = random.randint(2, 5)
+                delay = delay * 60
+                await asyncio.sleep(delay)
         async def main():
             os.system('./go-cqhttp &')
             retry = True
@@ -130,6 +142,7 @@ jobs:
                 try:
                     async with aiohttp.ClientSession() as session:
                         async with session.ws_connect("ws://127.0.0.1:8090") as ws:
+                            asyncio.get_event_loop().create_task(alive(ws))
                             while True:
                                 hh = datetime.datetime.utcnow().hour + 8
                                 if hh >= 24:
