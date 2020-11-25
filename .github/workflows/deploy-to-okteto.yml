@@ -77,7 +77,7 @@ jobs:
         EOF
         
         cat > mirai.py << EOF
-        import os, json, datetime, asyncio, aiohttp
+        import os, json, datetime, asyncio, aiohttp, random
         from lanzou.api import LanZouCloud
         fstpc = 0
         fstmo = 0
