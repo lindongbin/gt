@@ -73,39 +73,56 @@ jobs:
         
         cat > requirements.txt << EOF
         aiohttp
+        lanzou-api
         EOF
         
         cat > mirai.py << EOF
-        import os, json, random, asyncio, aiohttp
-        img = "pixiv.png"
-        async def pixiv():
-            try:
+        import os, json, datetime, asyncio, aiohttp, random
+        from lanzou.api import LanZouCloud
+        fstpc = 0
+        fstmo = 0
+        pcver = ""
+        mover = ""
+        async def chkver():
+            global fstpc
+            global fstmo
+            global pcver
+            global mover
+            lzy = LanZouCloud()
+            cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
+            if lzy.login_by_cookie(cookie) == LanZouCloud.SUCCESS:
+                files = lzy.get_file_list(${{ secrets.lzy_folder_id }})
                 async with aiohttp.ClientSession() as session:
-                    pix = random.randint(1, 10)
-                    url = "https://www.pixiv.net/ranking.php?mode=daily&content=illust&p=" + str(pix) +"&format=json"
+                    url = "https://product-details.mozilla.org/1.0/firefox_versions.json"
                     async with session.get(url=url) as req:
                         resp = await req.read()
-                    pix = random.randint(0, 49)
-                    illust_id = json.loads(resp)["contents"][pix]["illust_id"]
-                    title = json.loads(resp)["contents"][pix]["title"]
-                    user_name = json.loads(resp)["contents"][pix]["user_name"]
-                    url = "https://www.pixiv.net/ajax/illust/" + str(illust_id) + "/pages"
+                    resp = json.loads(resp)["LATEST_FIREFOX_VERSION"]
+                    if fstpc == 0:
+                        pcver = resp
+                        fstpc = 1
+                    resp32 = "firefox-" + resp + "-win32.exe"
+                    resp64 = "firefox-" + resp + "-win64.exe"
+                    sendmsg = ""
+                    if pcver != resp and files.find_by_name(resp32) and files.find_by_name(resp64):
+                        sendmsg = sendmsg + "国际版火狐" + resp +"已发布\n"
+                        pcver = resp
+                    url = "https://api.github.com/repos/mozilla-mobile/fenix/releases/latest"
                     async with session.get(url=url) as req:
                         resp = await req.read()
-                    resp = json.loads(resp)["body"][0]["urls"]["original"]
-                    global img
-                    if os.path.exists(img):
-                        os.remove(img)
-                    img = resp.split("/")[-1]
-                    headers = {'Referer':'https://app-api.pixiv.net/'}
-                    async with session.get(url=resp, headers=headers) as req:
-                        resp = await req.read()
-                        with open(img, "wb") as f:
-                            f.write(resp)
-                resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：https://www.pixiv.net/artworks/" + str(illust_id)}}, {"type": "image", "data": {"file": "file:////app/" + img}}]}}
-                return resp
-            except:
-                return
+                    resp = json.loads(resp)["tag_name"].replace("v", "")
+                    if resp.find("rc") == -1:
+                        if fstmo == 0:
+                            mover = resp
+                            fstmo = 1
+                        resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
+                        resp64m = "fenix-" + resp + "-arm64-v8a.apk"
+                        if mover != resp and files.find_by_name(resp32m) and files.find_by_name(resp64m):
+                            sendmsg = sendmsg + "安卓版火狐" + resp +"已发布\n"
+                            mover = resp
+                    if sendmsg != "":
+                        sendmsg = "\n" + sendmsg + "下载地址：${{ secrets.ok_dlurl }}"
+                        sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.ok_group }}, "message": [{"type": "at", "data": {"qq": "all"}}, {"type": "text", "data": {"text": sendmsg}}]}}
+                    return sendmsg
         async def main():
             os.system('./go-cqhttp &')
             retry = True
@@ -114,9 +131,17 @@ jobs:
                     async with aiohttp.ClientSession() as session:
                         async with session.ws_connect("ws://127.0.0.1:8090") as ws:
                             while True:
-                                resp = await pixiv()
-                                if resp:
+                                mm = datetime.datetime.now().minute
+                                hh = datetime.datetime.utcnow().hour + 8
+                                if hh >= 24:
+                                    hh = hh - 24
+                                resp = await chkver()
+                                if 7 <= hh <= 24 and resp != "":
                                     await ws.send_json(resp)
+                                else:
+                                    resp = "现在是" + str(hh) + "时" + str(mm) + "分"
+                                    sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.ok_alive }}, "message": resp}}
+                                    await ws.send_json(sendmsg)
                                 delay = random.randint(2, 5)
                                 delay = delay * 60
                                 await asyncio.sleep(delay)
