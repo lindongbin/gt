@@ -2,7 +2,7 @@ name: deploy-to-okteto
 
 on:
   schedule:
-    - cron: "0 21 * * *"
+    - cron: "30 21 * * *"
 
 jobs:
   deploy:
@@ -11,63 +11,64 @@ jobs:
 
     - name: Prepare for Deployment
       run: |
-        curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/v0.9.30/go-cqhttp-v0.9.30-linux-amd64.tar.gz" | tar -zx go-cqhttp
+        curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/v0.9.32/go-cqhttp-v0.9.32-linux-amd64.tar.gz" | tar -zx go-cqhttp
         
         cat > device.json << EOF
         {"display":"MIRAI.871355.001","product":"mirai","device":"mirai","board":"mirai","model":"mirai","finger_print":"mamoe/mirai/mirai:10/MIRAI.200122.001/5768199:user/release-keys","boot_id":"e3ddb090-487e-0416-6c1a-bee0c59d45d6","proc_version":"Linux version 3.0.31-5aQF5uaS (android-build@xxx.xxx.xxx.xxx.com)","protocol":1,"imei":"531686398009843"}
         EOF
         
-        cat > config.json << EOF
+        cat > config.hjson << EOF
         {
-          "uin": ${{ secrets.CF_QQID_IBM }},
-          "password": "${{ secrets.CF_QQPW_IBM }}",
-          "encrypt_password": false,
-          "password_encrypted": "",
-          "enable_db": false,
-          "access_token": "",
-          "relogin": {
-            "enabled": true,
-            "relogin_delay": 1,
-            "max_relogin_times": 0
-          },
-          "_rate_limit": {
-            "enabled": false,
-            "frequency": 1,
-            "bucket_size": 1
-          },
-          "ignore_invalid_cqcode": false,
-          "force_fragmented": false,
-          "heartbeat_interval": 0,
-          "http_config": {
-            "enabled": false,
-            "host": "0.0.0.0",
-            "port": 5700,
-            "timeout": 0,
-            "post_urls": {}
-          },
-          "ws_config": {
-            "enabled": true,
-            "host": "127.0.0.1",
-            "port": 8090
-          },
-          "ws_reverse_servers": [
-            {
-              "enabled": false,
-              "reverse_url": "ws://you_websocket_universal.server",
-              "reverse_api_url": "ws://you_websocket_api.server",
-              "reverse_event_url": "ws://you_websocket_event.server",
-              "reverse_reconnect_interval": 3000
+            uin: ${{ secrets.CF_QQID_IBM }}
+            password: "${{ secrets.CF_QQPW_IBM }}"
+            encrypt_password: false
+            password_encrypted: ""
+            enable_db: false
+            access_token: ""
+            relogin: {
+                enabled: true
+                relogin_delay: 3
+                max_relogin_times: 0
             }
-          ],
-          "post_message_format": "string",
-          "debug": false,
-          "log_level": "",
-          "web_ui": {
-            "enabled": false,
-            "host": "127.0.0.1",
-            "web_ui_port": 9999,
-            "web_input": false
-          }
+            _rate_limit: {
+                enabled: false
+                frequency: 1
+                bucket_size: 1
+            }
+            ignore_invalid_cqcode: false
+            force_fragmented: false
+            heartbeat_interval: 0
+            http_config: {
+                enabled: false
+                host: 0.0.0.0
+                port: 5700
+                timeout: 0
+                post_urls: {}
+            }
+            ws_config: {
+                enabled: true
+                host: 127.0.0.1
+                port: 8090
+            }
+            ws_reverse_servers: [
+                {
+                    enabled: false
+                    reverse_url: ws://you_websocket_universal.server
+                    reverse_api_url: ws://you_websocket_api.server
+                    reverse_event_url: ws://you_websocket_event.server
+                    reverse_reconnect_interval: 3000
+                }
+            ]
+            post_message_format: string
+            use_sso_address: false
+            debug: false
+            log_level: ""
+            web_ui: {
+                enabled: false
+                host: 127.0.0.1
+                web_ui_port: 9999
+                web_input: false
+            }
         }
         EOF
         
