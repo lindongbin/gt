@@ -118,7 +118,7 @@ jobs:
                                 resp = await pixiv()
                                 if resp:
                                     await ws.send_json(resp)
-                                delay = random.randint(2, 5)
+                                delay = random.randint(10, 15)
                                 delay = delay * 60
                                 await asyncio.sleep(delay)
                 except:
