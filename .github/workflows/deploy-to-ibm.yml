@@ -145,7 +145,7 @@ jobs:
                                     resp = "现在是" + str(hh) + "时" + str(mm) + "分"
                                     sendmsg = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.ok_alive }}, "message": resp}}
                                     await ws.send_json(sendmsg)
-                                delay = random.randint(2, 5)
+                                delay = random.randint(5, 10)
                                 delay = delay * 60
                                 await asyncio.sleep(delay)
                 except:
