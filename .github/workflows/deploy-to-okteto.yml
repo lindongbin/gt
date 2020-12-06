@@ -77,7 +77,7 @@ jobs:
         EOF
         
         cat > mirai.py << EOF
-        import os, json, random, asyncio, aiohttp
+        import os, json, random, asyncio, aiohttp, datetime
         img = "pixiv.png"
         async def pixiv():
             try:
@@ -115,9 +115,13 @@ jobs:
                     async with aiohttp.ClientSession() as session:
                         async with session.ws_connect("ws://127.0.0.1:8090") as ws:
                             while True:
-                                resp = await pixiv()
-                                if resp:
-                                    await ws.send_json(resp)
+                                hh = datetime.datetime.utcnow().hour + 8
+                                if hh >= 24:
+                                    hh = hh - 24
+                                if 8 <= hh <= 24:
+                                    resp = await pixiv()
+                                    if resp:
+                                        await ws.send_json(resp)
                                 delay = random.randint(10, 15)
                                 delay = delay * 60
                                 await asyncio.sleep(delay)
