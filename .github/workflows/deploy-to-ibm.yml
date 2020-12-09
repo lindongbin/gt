@@ -74,12 +74,10 @@ jobs:
         
         cat > requirements.txt << EOF
         aiohttp
-        lanzou-api
         EOF
         
         cat > mirai.py << EOF
         import os, json, datetime, asyncio, aiohttp, random
-        from lanzou.api import LanZouCloud
         fstpc = 0
         fstmo = 0
         pcver = ""
@@ -89,11 +87,13 @@ jobs:
             global fstmo
             global pcver
             global mover
-            lzy = LanZouCloud()
+            url = "https://pc.woozooo.com/doupload.php"
+            headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:75.0) Gecko/20100101 Firefox/75.0'}
+            data = {'task': 5, 'folder_id': ${{ secrets.lzy_folder_id }}, 'pg': 1}
             cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
-            if lzy.login_by_cookie(cookie) == LanZouCloud.SUCCESS:
-                files = lzy.get_file_list(${{ secrets.lzy_folder_id }})
-                async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=url, data=data, headers=headers, cookies=cookie) as req:
+                    files = await req.text()
                     url = "https://product-details.mozilla.org/1.0/firefox_versions.json"
                     async with session.get(url=url) as req:
                         resp = await req.read()
@@ -104,7 +104,7 @@ jobs:
                     resp32 = "firefox-" + resp + "-win32.exe"
                     resp64 = "firefox-" + resp + "-win64.exe"
                     sendmsg = ""
-                    if pcver != resp and files.find_by_name(resp32) and files.find_by_name(resp64):
+                    if pcver != resp and files.find(resp32) > -1 and files.find(resp64) > -1:
                         sendmsg = sendmsg + "国际版火狐" + resp +"已发布\n"
                         pcver = resp
                     url = "https://api.github.com/repos/mozilla-mobile/fenix/releases/latest"
@@ -117,7 +117,7 @@ jobs:
                             fstmo = 1
                         resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
                         resp64m = "fenix-" + resp + "-arm64-v8a.apk"
-                        if mover != resp and files.find_by_name(resp32m) and files.find_by_name(resp64m):
+                        if mover != resp and files.find(resp32m) > -1 and files.find(resp64m) > -1:
                             sendmsg = sendmsg + "安卓版火狐" + resp +"已发布\n"
                             mover = resp
                     if sendmsg != "":
