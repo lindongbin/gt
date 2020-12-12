@@ -11,7 +11,13 @@ jobs:
 
     - name: Prepare for Deployment
       run: |
-        curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/v0.9.32/go-cqhttp-v0.9.32-linux-amd64.tar.gz" | tar -zx go-cqhttp
+        curl -sL -o ver.json https://api.github.com/repos/Mrs4s/go-cqhttp/releases
+        curl -sL -o jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+        chmod +x ./jq
+        ver=$(./jq '.[0] | .tag_name' ver.json)
+        ver=${ver#\"}
+        ver=${ver%\"}
+        curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/${ver}/go-cqhttp-${ver}-linux-amd64.tar.gz" | tar -zx go-cqhttp         
         
         cat > device.json << EOF
         {"display":"MIRAI.871355.001","product":"mirai","device":"mirai","board":"mirai","model":"mirai","finger_print":"mamoe/mirai/mirai:10/MIRAI.200122.001/5768199:user/release-keys","boot_id":"e3ddb090-487e-0416-6c1a-bee0c59d45d6","proc_version":"Linux version 3.0.31-5aQF5uaS (android-build@xxx.xxx.xxx.xxx.com)","protocol":1,"imei":"531686398009843"}
@@ -103,7 +109,7 @@ jobs:
                         resp = await req.read()
                         with open(img, "wb") as f:
                             f.write(resp)
-                resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：https://www.pixiv.net/artworks/" + str(illust_id)}}, {"type": "image", "data": {"file": "file:///" + os.path.realpath(img)}}]}}
+                resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：" + str(illust_id)}}, {"type": "image", "data": {"file": "file:///" + os.path.realpath(img)}}]}}
                 return resp
             except:
                 return
