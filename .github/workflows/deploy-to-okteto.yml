@@ -11,8 +11,7 @@ jobs:
 
     - name: Prepare for Deployment
       run: |
-        curl -sL -o ver.json https://api.github.com/repos/Mrs4s/go-cqhttp/releases
-        ver=$(cat ver.json | sed 's/,/\n/g' | grep "tag_name" | head -n 1 | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g')
+        ver=$(curl -sL https://api.github.com/repos/Mrs4s/go-cqhttp/releases?per_page=1 | sed 's/,/\n/g' | grep "tag_name" | head -n 1 | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g')
         curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/${ver}/go-cqhttp-${ver}-linux-amd64.tar.gz" | tar -zx go-cqhttp         
         
         cat > device.json << EOF
