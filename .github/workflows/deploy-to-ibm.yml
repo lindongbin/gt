@@ -2,7 +2,7 @@ name: deploy-to-ibm
 
 on:
   schedule:
-    - cron: "0 20 * * 6"
+    - cron: "0 17 * * *"
 
 jobs:
   deploy:
@@ -78,7 +78,36 @@ jobs:
         EOF
         
         cat > mirai.py << EOF
-        import os, datetime, asyncio, aiohttp, random
+        import os, json, random, asyncio, aiohttp, datetime
+        img = "pixiv.png"
+        async def pixiv():
+            try:
+                async with aiohttp.ClientSession() as session:
+                    pix = random.randint(1, 10)
+                    url = "https://www.pixiv.net/ranking.php?mode=daily&content=illust&p=" + str(pix) +"&format=json"
+                    async with session.get(url=url) as req:
+                        resp = await req.read()
+                    pix = random.randint(0, 49)
+                    illust_id = json.loads(resp)["contents"][pix]["illust_id"]
+                    title = json.loads(resp)["contents"][pix]["title"]
+                    user_name = json.loads(resp)["contents"][pix]["user_name"]
+                    url = "https://www.pixiv.net/ajax/illust/" + str(illust_id) + "/pages"
+                    async with session.get(url=url) as req:
+                        resp = await req.read()
+                    resp = json.loads(resp)["body"][0]["urls"]["original"]
+                    global img
+                    if os.path.exists(img):
+                        os.remove(img)
+                    img = resp.split("/")[-1]
+                    headers = {'Referer':'https://app-api.pixiv.net/'}
+                    async with session.get(url=resp, headers=headers) as req:
+                        resp = await req.read()
+                        with open(img, "wb") as f:
+                            f.write(resp)
+                resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：" + str(illust_id)}}, {"type": "image", "data": {"file": "file:///" + os.path.realpath(img)}}]}}
+                return resp
+            except:
+                return
         async def main():
             os.system('./go-cqhttp &')
             retry = True
@@ -87,13 +116,14 @@ jobs:
                     async with aiohttp.ClientSession() as session:
                         async with session.ws_connect("ws://127.0.0.1:8090") as ws:
                             while True:
-                                mm = datetime.datetime.now().minute
                                 hh = datetime.datetime.utcnow().hour + 8
                                 if hh >= 24:
                                     hh = hh - 24
-                                resp = "现在是" + str(hh) + "时" + str(mm) + "分"
-                                print(resp)
-                                delay = random.randint(5, 10)
+                                if 8 <= hh <= 24:
+                                    resp = await pixiv()
+                                    if resp:
+                                        await ws.send_json(resp)
+                                delay = random.randint(10, 15)
                                 delay = delay * 60
                                 await asyncio.sleep(delay)
                 except:
