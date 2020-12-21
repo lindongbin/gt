@@ -75,10 +75,63 @@ jobs:
         
         cat > requirements.txt << EOF
         aiohttp
+        lxml
         EOF
         
         cat > mirai.py << EOF
-        import os, datetime, asyncio, aiohttp, random
+        import os, asyncio, aiohttp, random, urllib, json
+        from lxml import etree
+        async def bdbk(bkmsg):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    bdurl = 'https://baike.baidu.com/item/' + bkmsg
+                    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'}
+                    async with session.get(url=bdurl, headers = headers) as req:
+                        page = await req.text()
+                page = etree.HTML(page)
+                bkimg = page.xpath('//div[@class="album-wrap"]/img/@src')
+                addimg = page.xpath('//div[@class="summary-pic"]/a/img/@src')
+                bkimg = bkimg + addimg
+                addimg = page.xpath('//img[@class="lazy-img"]/@data-src')
+                bkimg = bkimg + addimg
+                addimg = page.xpath('//div[@class="pic"]/a/img/@src')
+                bkimg = bkimg + addimg
+                picnum = len(bkimg)
+                if picnum >0:
+                    picnum = picnum - 1
+                    picnum = random.randint(0, picnum)
+                    bkimg = bkimg[picnum].split("?x-bce-process")
+                    bkimg = bkimg[0]
+                for i in page.xpath('//div[@class="lemma-summary"]/div//sup'):
+                    i.getparent().remove(i)
+                page = page.xpath('//div[@class="lemma-summary"]/div//text()')
+                page = "".join(page).replace('\n', '').replace('\xa0', '')
+                if page != '':
+                    bkmsg = page + '\nhttps://baike.baidu.com/item/' + urllib.parse.quote(bkmsg)
+                    if bkimg:
+                        bkmsg = [{"type": "image", "data": {"file": bkimg}}, {"type": "text", "data": {"text": bkmsg}}]
+                    else:
+                        bkmsg = bkmsg
+                    return bkmsg
+            except:
+                return
+        async def ws_group(ws, recv_data):
+            if recv_data["sub_type"] == "normal":
+                group = recv_data["group_id"]
+                message = recv_data["message"]
+                bktg = 0
+                bkkw = ["百科", "是啥", "啥是", "是谁", "谁是", "是什么", "什么是"]
+                for kw in bkkw:
+                    if message.find(kw) > -1:
+                        bkmsg = message.replace(kw, "")
+                        bktg=1
+                        break
+                if bktg == 1:
+                    bkmsg = await bdbk(bkmsg)
+                    if bkmsg:
+                        sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": bkmsg}}
+                        await ws.send_json(sendmsg)
+                        return
         async def main():
             os.system('./go-cqhttp &')
             retry = True
@@ -87,15 +140,12 @@ jobs:
                     async with aiohttp.ClientSession() as session:
                         async with session.ws_connect("ws://127.0.0.1:8090") as ws:
                             while True:
-                                mm = datetime.datetime.now().minute
-                                hh = datetime.datetime.utcnow().hour + 8
-                                if hh >= 24:
-                                    hh = hh - 24
-                                resp = "现在是" + str(hh) + "时" + str(mm) + "分"
-                                print(resp)
-                                delay = random.randint(10, 15)
-                                delay = delay * 60
-                                await asyncio.sleep(delay)
+                                recv_data = await ws.receive()
+                                if recv_data.type == aiohttp.WSMsgType.TEXT:
+                                    recv_data = json.loads(recv_data.data)
+                                    if "post_type" in recv_data:
+                                        if recv_data["post_type"] == "message":
+                                            await ws_group(ws, recv_data)
                 except:
                     await asyncio.sleep(5)
                     retry = True
