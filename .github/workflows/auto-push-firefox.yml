@@ -21,10 +21,20 @@ jobs:
     - name: Create python file
       run: |
         cat > firefox.py << EOF
-        import urllib, json
+        import urllib, json, re
         from lanzou.api import LanZouCloud
-        resp = urllib.request.urlopen("https://product-details.mozilla.org/1.0/firefox_versions.json")
-        resp = json.loads(resp.read().decode())["LATEST_FIREFOX_VERSION"]
+        resp = urllib.request.urlopen("https://ftp.mozilla.org/pub/firefox/releases/")
+        resp = resp.read().decode()
+        resp1 = re.findall(r'(?<=">)\d+\.\d+(?=/<)', resp)
+        resp1.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1])))
+        resp1 = resp1[-1]
+        resp2 = re.findall(r'(?<=">)\d+\.\d+\.\d+(?=/<)', resp)
+        resp2.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1]), int(x.split(".")[2])))
+        resp2 = resp2[-1]
+        if resp1.split(".")[0] == resp2.split(".")[0]:
+            resp = resp2
+        else:
+            resp = resp1
         url32 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win32/zh-CN/Firefox%20Setup%20" + resp + ".exe"
         url64 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win64/zh-CN/Firefox%20Setup%20" + resp + ".exe"
         resp32 = "firefox-" + resp + "-win32.exe"
