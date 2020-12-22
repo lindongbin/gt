@@ -14,6 +14,39 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Download and mod fenix
+      run: |
+        wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.5.0/apktool_2.5.0.jar
+        
+        ver=$(curl -sL https://api.github.com/repos/mozilla-mobile/fenix/releases/latest | sed 's/,/\n/g' | grep "tag_name" | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ v//g')
+        #ver=$(curl -sL https://ftp.mozilla.org/pub/firefox/releases/ | grep "href" | sed 's/>/\n/g' | grep "/a" | sed 's/\//\n/g' | grep -v -E "<|[a-z]" | sort -t "." -k 1nr -k 2nr -k 3nr | head -n 1)
+        wget -q https://github.com/mozilla-mobile/fenix/releases/download/v${ver}/fenix-${ver}-armeabi-v7a.apk
+        wget -q https://github.com/mozilla-mobile/fenix/releases/download/v${ver}/fenix-${ver}-arm64-v8a.apk
+        
+        java -jar apktool_2.5.0.jar d fenix-${ver}-armeabi-v7a.apk -o v7a
+        java -jar apktool_2.5.0.jar d fenix-${ver}-arm64-v8a.apk -o v8a
+        sed -i 's/baidu/unknown/g' v7a/assets/extensions/webcompat/data/ua_overrides.js
+        sed -i 's/browser.safebrowsing.malware.enabled/unknown/' v7a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
+        sed -i 's/browser.safebrowsing.phishing.enabled/unknown/' v7a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
+        sed -i 's#iget-boolean v0, p0, Lorg/mozilla/fenix/utils/Settings;->showSecretDebugMenuThisSession:Z#const/4 v0, 0x1#' v7a/smali_classes2/org/mozilla/fenix/utils/Settings.smali
+        sed -i '/aboutConfigEnabled/{n;s#.locals 1#.locals 1\n    const/4 p1, 0x1#}' v7a/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\$Builder.smali
+        sed -i '1,/const\/4 v0, 0x0/{s#const/4 v0, 0x0#const/4 v0, 0x1#}' v7a/smali_classes2/org/mozilla/fenix/ReleaseChannel.smali
+        
+        sed -i 's/baidu/unknown/g' v8a/assets/extensions/webcompat/data/ua_overrides.js
+        sed -i 's/browser.safebrowsing.malware.enabled/unknown/' v8a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
+        sed -i 's/browser.safebrowsing.phishing.enabled/unknown/' v8a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
+        sed -i 's#iget-boolean v0, p0, Lorg/mozilla/fenix/utils/Settings;->showSecretDebugMenuThisSession:Z#const/4 v0, 0x1#' v8a/smali_classes2/org/mozilla/fenix/utils/Settings.smali
+        sed -i '/aboutConfigEnabled/{n;s#.locals 1#.locals 1\n    const/4 p1, 0x1#}' v8a/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\$Builder.smali
+        sed -i '1,/const\/4 v0, 0x0/{s#const/4 v0, 0x0#const/4 v0, 0x1#}' v8a/smali_classes2/org/mozilla/fenix/ReleaseChannel.smali
+        
+        java -jar apktool_2.5.0.jar b v7a -o v7a.apk --use-aapt2
+        java -jar apktool_2.5.0.jar b v8a -o v8a.apk --use-aapt2
+        
+        wget -q https://github.com/lindongbin/gt/raw/master/apksigner.jar
+        wget -q https://github.com/lindongbin/gt/raw/master/apksigner.jks
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out fenix-${ver}-armeabi-v7a-mod.apk v7a.apk
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out fenix-${ver}-arm64-v8a-mod.apk v8a.apk
+
     - name: Install dependencies
       run: |
         pip install lanzou-api
@@ -41,10 +74,10 @@ jobs:
         resp64 = "firefox-" + resp + "-win64.exe"
         resp = urllib.request.urlopen("https://api.github.com/repos/mozilla-mobile/fenix/releases/latest")
         resp = json.loads(resp.read().decode())["tag_name"].replace("v", "")
-        url32m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-armeabi-v7a.apk"
-        url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
         resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
         resp64m = "fenix-" + resp + "-arm64-v8a.apk"
+        resp32mm = "fenix-" + resp + "-armeabi-v7a-mod.apk"
+        resp64mm = "fenix-" + resp + "-arm64-v8a-mod.apk"
         lzy = LanZouCloud()
         cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
         if lzy.login_by_cookie(cookie) == LanZouCloud.SUCCESS:
@@ -57,11 +90,13 @@ jobs:
                 lzy.upload_file(resp64, ${{ secrets.lzy_folder_id }})
             if resp.find("rc") == -1:
                 if files.find_by_name(resp32m) is None:
-                    urllib.request.urlretrieve(url32m, resp32m)
                     lzy.upload_file(resp32m, ${{ secrets.lzy_folder_id }})
                 if files.find_by_name(resp64m) is None:
-                    urllib.request.urlretrieve(url64m, resp64m)
                     lzy.upload_file(resp64m, ${{ secrets.lzy_folder_id }})
+                if files.find_by_name(resp32mm) is None:
+                    lzy.upload_file(resp32mm, ${{ secrets.lzy_folder_id }})
+                if files.find_by_name(resp64mm) is None:
+                    lzy.upload_file(resp64mm, ${{ secrets.lzy_folder_id }})
         EOF
         
     - name: Run python file
