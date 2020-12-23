@@ -42,10 +42,16 @@ jobs:
         java -jar apktool_2.5.0.jar b v7a -o v7a.apk --use-aapt2
         java -jar apktool_2.5.0.jar b v8a -o v8a.apk --use-aapt2
         
+        wget -q https://github.com/lindongbin/gt/raw/master/zipalign
+        wget -q -P ./lib64 https://github.com/lindongbin/gt/raw/master/libc%2B%2B.so
+        chmod +x zipalign
+        ./zipalign -p 4 v7a.apk v7a-align.apk
+        ./zipalign -p 4 v8a.apk v8a-align.apk
+        
         wget -q https://github.com/lindongbin/gt/raw/master/apksigner.jar
         wget -q https://github.com/lindongbin/gt/raw/master/apksigner.jks
-        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out fenix-${ver}-armeabi-v7a-mod.apk v7a.apk
-        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out fenix-${ver}-arm64-v8a-mod.apk v8a.apk
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out fenix-${ver}-armeabi-v7a-mod.apk v7a-align.apk
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out fenix-${ver}-arm64-v8a-mod.apk v8a-align.apk
 
     - name: Install dependencies
       run: |
