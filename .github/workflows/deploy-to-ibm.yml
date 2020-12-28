@@ -61,7 +61,7 @@ jobs:
                 }
             ]
             post_message_format: string
-            use_sso_address: false
+            use_sso_address: true
             debug: false
             log_level: ""
             web_ui: {
