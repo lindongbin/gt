@@ -109,7 +109,7 @@ jobs:
             except:
                 return
         async def main():
-            os.system('./go-cqhttp &')
+            os.system('./mirai.sh &')
             retry = True
             while retry == True:
                 try:
@@ -130,6 +130,15 @@ jobs:
                     await asyncio.sleep(5)
                     retry = True
         asyncio.get_event_loop().run_until_complete(main())
+        EOF
+        
+        cat > mirai.sh << EOF
+        #!/bin/bash
+        while true
+        do
+          ./go-cqhttp
+          sleep 60
+        done
         EOF
         
         cat > Procfile << EOF
