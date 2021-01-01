@@ -133,7 +133,7 @@ jobs:
                         await ws.send_json(sendmsg)
                         return
         async def main():
-            os.system('./go-cqhttp &')
+            os.system('./mirai.sh &')
             retry = True
             while retry == True:
                 try:
@@ -151,6 +151,17 @@ jobs:
                     retry = True
         asyncio.get_event_loop().run_until_complete(main())
         EOF
+        
+        cat > mirai.sh << EOF
+        #!/bin/bash
+        while true
+        do
+          ./go-cqhttp
+          sleep 60
+        done
+        EOF
+        
+        chmod +x mirai.sh
         
         cat > Dockerfile << EOF
         FROM python:slim
