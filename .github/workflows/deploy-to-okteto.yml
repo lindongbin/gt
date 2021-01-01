@@ -85,10 +85,19 @@ jobs:
             try:
                 async with aiohttp.ClientSession() as session:
                     bdurl = 'https://baike.baidu.com/item/' + bkmsg
+                    bkmsg = urllib.parse.quote(bkmsg)
                     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'}
                     async with session.get(url=bdurl, headers = headers) as req:
                         page = await req.text()
                 page = etree.HTML(page)
+                items = page.xpath('//li[@class="list-dot list-dot-paddingleft"]/div/a/@href')
+                if items != []:
+                    bdurl = 'https://baike.baidu.com' + items[0]
+                    bkmsg = items[0].replace("/item/", "")
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(url=bdurl, headers = headers) as req:
+                            page = await req.text()
+                            page = etree.HTML(page)
                 bkimg = page.xpath('//div[@class="album-wrap"]/img/@src')
                 addimg = page.xpath('//div[@class="summary-pic"]/a/img/@src')
                 bkimg = bkimg + addimg
@@ -107,7 +116,7 @@ jobs:
                 page = page.xpath('//div[@class="lemma-summary"]/div//text()')
                 page = "".join(page).replace('\n', '').replace('\xa0', '')
                 if page != '':
-                    bkmsg = page + '\nhttps://baike.baidu.com/item/' + urllib.parse.quote(bkmsg)
+                    bkmsg = page + '\nhttps://baike.baidu.com/item/' + bkmsg
                     if bkimg:
                         bkmsg = [{"type": "image", "data": {"file": bkimg}}, {"type": "text", "data": {"text": bkmsg}}]
                     else:
