@@ -131,14 +131,15 @@ async def bdbk(bkmsg):
             async with session.get(url=bdurl, headers = headers) as req:
                 page = await req.text()
         page = etree.HTML(page)
-        items = page.xpath('//li[@class="list-dot list-dot-paddingleft"]/div/a/@href')
-        if items != []:
-            bdurl = 'https://baike.baidu.com' + items[0]
-            bkmsg = items[0].replace("/item/", "")
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url=bdurl, headers = headers) as req:
-                    page = await req.text()
-                    page = etree.HTML(page)
+        if page.xpath('//div[@class="lemmaWgt-subLemmaListTitle"]') != []:
+            items = page.xpath('//li[@class="list-dot list-dot-paddingleft"]/div/a/@href')
+            if items != []:
+                bdurl = 'https://baike.baidu.com' + items[0]
+                bkmsg = items[0].replace("/item/", "")
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url=bdurl, headers = headers) as req:
+                        page = await req.text()
+                        page = etree.HTML(page)
         bkimg = page.xpath('//div[@class="album-wrap"]/img/@src')
         addimg = page.xpath('//div[@class="summary-pic"]/a/img/@src')
         bkimg = bkimg + addimg
