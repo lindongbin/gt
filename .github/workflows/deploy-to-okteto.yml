@@ -11,177 +11,72 @@ jobs:
 
     - name: Prepare for Deployment
       run: |
-        ver=$(curl -sL https://api.github.com/repos/Mrs4s/go-cqhttp/releases?per_page=1 | sed 's/,/\n/g' | grep "tag_name" | head -n 1 | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g')
-        curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/${ver}/go-cqhttp-${ver}-linux-amd64.tar.gz" | tar -zx go-cqhttp         
+        ver=$(curl -sL https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-core-all/maven-metadata.xml | grep "release" | sed 's/<release>//g' | sed 's/<\/release>//g' | sed 's/ //g')
+        wget -q -P ./libs https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-core-all/${ver}/mirai-core-all-${ver}-all.jar
+        ver=$(curl -sL https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console/maven-metadata.xml | grep "release" | sed 's/<release>//g' | sed 's/<\/release>//g' | sed 's/ //g')
+        wget -q -P ./libs https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console/${ver}/mirai-console-${ver}-all.jar
+        ver=$(curl -sL https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console-terminal/maven-metadata.xml | grep "release" | sed 's/<release>//g' | sed 's/<\/release>//g' | sed 's/ //g')
+        wget -q -P ./libs https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console-terminal/${ver}/mirai-console-terminal-${ver}-all.jar
+        ver=$(curl -sL https://api.github.com/repos/project-mirai/mirai-api-http/releases?per_page=1 | sed 's/,/\n/g' | grep "tag_name" | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g')
+        wget -q -P ./plugins https://github.com/project-mirai/mirai-api-http/releases/download/${ver}/mirai-api-http-${ver}.mirai.jar
         
         cat > device.json << EOF
-        {"display":"MIRAI.871355.001","product":"mirai","device":"mirai","board":"mirai","model":"mirai","finger_print":"mamoe/mirai/mirai:10/MIRAI.200122.001/5768199:user/release-keys","boot_id":"e3ddb090-487e-0416-6c1a-bee0c59d45d6","proc_version":"Linux version 3.0.31-5aQF5uaS (android-build@xxx.xxx.xxx.xxx.com)","protocol":1,"imei":"531686398009843"}
+        {"display":[77,73,82,65,73,46,53,53,54,55,48,50,46,48,48,49],"product":[109,105,114,97,105],"device":[109,105,114,97,105],"board":[109,105,114,97,105],"brand":[109,97,109,111,101],"model":[109,105,114,97,105],"bootloader":[117,110,107,110,111,119,110],"fingerprint":[109,97,109,111,101,47,109,105,114,97,105,47,109,105,114,97,105,58,49,48,47,77,73,82,65,73,46,50,48,48,49,50,50,46,48,48,49,47,55,57,57,53,51,53,55,58,117,115,101,114,47,114,101,108,101,97,115,101,45,107,101,121,115],"bootId":[49,55,67,67,48,56,49,52,45,68,49,55,56,45,70,69,48,53,45,54,48,50,54,45,70,70,68,53,51,69,70,54,48,51,66,51],"procVersion":[76,105,110,117,120,32,118,101,114,115,105,111,110,32,51,46,48,46,51,49,45,56,52,54,76,122,76,51,87,32,40,97,110,100,114,111,105,100,45,98,117,105,108,100,64,120,120,120,46,120,120,120,46,120,120,120,46,120,120,120,46,99,111,109,41],"baseBand":[],"version":{"incremental":[53,56,57,49,57,51,56],"release":[49,48],"codename":[82,69,76]},"simInfo":[84,45,77,111,98,105,108,101],"osType":[97,110,100,114,111,105,100],"macAddress":[48,50,58,48,48,58,48,48,58,48,48,58,48,48,58,48,48],"wifiBSSID":[48,50,58,48,48,58,48,48,58,48,48,58,48,48,58,48,48],"wifiSSID":[60,117,110,107,110,111,119,110,32,115,115,105,100,62],"imsiMd5":[-126,39,-60,-87,101,24,29,62,-12,68,119,111,-95,38,123,12],"imei":"508887311603058","apn":[119,105,102,105]}
         EOF
         
-        cat > config.hjson << EOF
-        {
-            uin: ${{ secrets.CF_QQID_IBM }}
-            password: "${{ secrets.CF_QQPW_IBM }}"
-            encrypt_password: false
-            password_encrypted: ""
-            enable_db: false
-            access_token: ""
-            relogin: {
-                enabled: true
-                relogin_delay: 3
-                max_relogin_times: 0
-            }
-            _rate_limit: {
-                enabled: false
-                frequency: 1
-                bucket_size: 1
-            }
-            ignore_invalid_cqcode: false
-            force_fragmented: false
-            heartbeat_interval: 0
-            http_config: {
-                enabled: false
-                host: 0.0.0.0
-                port: 5700
-                timeout: 0
-                post_urls: {}
-            }
-            ws_config: {
-                enabled: true
-                host: 127.0.0.1
-                port: 8090
-            }
-            ws_reverse_servers: [
-                {
-                    enabled: false
-                    reverse_url: ws://you_websocket_universal.server
-                    reverse_api_url: ws://you_websocket_api.server
-                    reverse_event_url: ws://you_websocket_event.server
-                    reverse_reconnect_interval: 3000
-                }
-            ]
-            post_message_format: string
-            use_sso_address: true
-            debug: false
-            log_level: ""
-            web_ui: {
-                enabled: false
-                host: 127.0.0.1
-                web_ui_port: 9999
-                web_input: false
-            }
-        }
+        mkdir -p config/Console
+        
+        cat > config/Console/AutoLogin.yml << EOF
+        accounts: 
+          -
+            account: ${{ secrets.CF_QQID_IBM }}
+            password: 
+              kind: PLAIN
+              value: ${{ secrets.CF_QQPW_IBM }}
+            configuration: 
+              protocol: ANDROID_PHONE
         EOF
         
-        cat > requirements.txt << EOF
-        aiohttp
-        lxml
-        EOF
+        mkdir -p config/net.mamoe.mirai-api-http
         
-        cat > mirai.py << EOF
-        import os, asyncio, aiohttp, random, urllib, json
-        from lxml import etree
-        async def bdbk(bkmsg):
-            try:
-                async with aiohttp.ClientSession() as session:
-                    bdurl = 'https://baike.baidu.com/item/' + bkmsg
-                    bkmsg = urllib.parse.quote(bkmsg)
-                    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:80.0) Gecko/20100101 Firefox/80.0'}
-                    async with session.get(url=bdurl, headers = headers) as req:
-                        page = await req.text()
-                page = etree.HTML(page)
-                items = page.xpath('//li[@class="list-dot list-dot-paddingleft"]/div/a/@href')
-                if items != []:
-                    bdurl = 'https://baike.baidu.com' + items[0]
-                    bkmsg = items[0].replace("/item/", "")
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(url=bdurl, headers = headers) as req:
-                            page = await req.text()
-                            page = etree.HTML(page)
-                bkimg = page.xpath('//div[@class="album-wrap"]/img/@src')
-                addimg = page.xpath('//div[@class="summary-pic"]/a/img/@src')
-                bkimg = bkimg + addimg
-                addimg = page.xpath('//img[@class="lazy-img"]/@data-src')
-                bkimg = bkimg + addimg
-                addimg = page.xpath('//div[@class="pic"]/a/img/@src')
-                bkimg = bkimg + addimg
-                picnum = len(bkimg)
-                if picnum >0:
-                    picnum = picnum - 1
-                    picnum = random.randint(0, picnum)
-                    bkimg = bkimg[picnum].split("?x-bce-process")
-                    bkimg = bkimg[0]
-                for i in page.xpath('//div[@class="lemma-summary"]/div//sup'):
-                    i.getparent().remove(i)
-                page = page.xpath('//div[@class="lemma-summary"]/div//text()')
-                page = "".join(page).replace('\n', '').replace('\xa0', '')
-                if page != '':
-                    bkmsg = page + '\nhttps://baike.baidu.com/item/' + bkmsg
-                    if bkimg:
-                        bkmsg = [{"type": "image", "data": {"file": bkimg}}, {"type": "text", "data": {"text": bkmsg}}]
-                    else:
-                        bkmsg = bkmsg
-                    return bkmsg
-            except:
-                return
-        async def ws_group(ws, recv_data):
-            if recv_data["sub_type"] == "normal":
-                group = recv_data["group_id"]
-                message = recv_data["message"]
-                bktg = 0
-                bkkw = ["百科", "是啥", "啥是", "是谁", "谁是", "是什么", "什么是"]
-                for kw in bkkw:
-                    if message.find(kw) > -1:
-                        bkmsg = message.replace(kw, "")
-                        bktg=1
-                        break
-                if bktg == 1:
-                    bkmsg = await bdbk(bkmsg)
-                    if bkmsg:
-                        sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": bkmsg}}
-                        await ws.send_json(sendmsg)
-                        return
-        async def main():
-            os.system('./mirai.sh &')
-            retry = True
-            while retry == True:
-                try:
-                    async with aiohttp.ClientSession() as session:
-                        async with session.ws_connect("ws://127.0.0.1:8090") as ws:
-                            while True:
-                                recv_data = await ws.receive()
-                                if recv_data.type == aiohttp.WSMsgType.TEXT:
-                                    recv_data = json.loads(recv_data.data)
-                                    if "post_type" in recv_data:
-                                        if recv_data["post_type"] == "message":
-                                            await ws_group(ws, recv_data)
-                except:
-                    await asyncio.sleep(5)
-                    retry = True
-        asyncio.get_event_loop().run_until_complete(main())
+        cat > config/net.mamoe.mirai-api-http/setting.yml << EOF
+        cors: 
+          - '*'
+        host: 127.0.0.1
+        port: 8090
+        authKey: lindongbin
+        cacheSize: 4096
+        enableWebsocket: true
+        report: 
+          enable: false
+          groupMessage: 
+            report: true
+          friendMessage: 
+            report: true
+          tempMessage: 
+            report: true
+          eventMessage: 
+            report: true
+          destinations: []
+          extraHeaders: {}
+        heartbeat: 
+          enable: true
+          delay: 1000
+          period: 15000
+          destinations: []
+          extraBody: {}
+          extraHeaders: {}
         EOF
-        
-        cat > mirai.sh << EOF
-        #!/bin/bash
-        while true
-        do
-          ./go-cqhttp
-          sleep 60
-        done
-        EOF
-        
-        chmod +x mirai.sh
         
         cat > Dockerfile << EOF
-        FROM python:slim
+        FROM openjdk:8-jre
         COPY . .
-        RUN pip install --no-cache-dir -r requirements.txt
-        CMD python mirai.py
+        CMD java -cp "./libs/*" net.mamoe.mirai.console.terminal.MiraiConsoleTerminalLoader $*
         EOF
         
         cat > okteto.yml << EOF
         name: mirai
-        image: okteto.dev/mirai:golang
+        image: okteto.dev/mirai
         sync:
           - .:/mirai
         EOF
@@ -190,6 +85,5 @@ jobs:
       run: |
         curl https://get.okteto.com -sSfL | sh
         okteto login --token=${{ secrets.ok_token }}
-        okteto build -t registry.cloud.okteto.net/lindongbin/mirai:golang .
         okteto namespace lindongbin
         echo "y" | okteto push
