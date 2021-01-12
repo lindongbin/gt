@@ -11,6 +11,9 @@ jobs:
 
     - name: Prepare for Deployment
       run: |
+        wget -q https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jre_x64_linux_11.0.9.1_1.tar.gz
+        tar -zxf OpenJDK11U-jre_x64_linux_11.0.9.1_1.tar.gz
+        
         ver=$(curl -sL https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-core-all/maven-metadata.xml | grep "release" | sed 's/<release>//g' | sed 's/<\/release>//g' | sed 's/ //g')
         wget -q -P ./libs https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-core-all/${ver}/mirai-core-all-${ver}-all.jar
         ver=$(curl -sL https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console/maven-metadata.xml | grep "release" | sed 's/<release>//g' | sed 's/<\/release>//g' | sed 's/ //g')
@@ -68,10 +71,46 @@ jobs:
           extraHeaders: {}
         EOF
         
+        cat > requirements.txt << EOF
+        aiohttp
+        EOF
+        
+        cat > mirai.py << EOF
+        import os, datetime, random, asyncio, aiohttp
+        async def main():
+            os.system('./openjdk-11.0.9.1_1-jre/bin/java -cp "./libs/*" net.mamoe.mirai.console.terminal.MiraiConsoleTerminalLoader $* &')
+            retry = True
+            while retry == True:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        data = {"authKey": "lindongbin"}
+                        async with session.post(url="http://127.0.0.1:8090/auth", json=data) as req:
+                            resp = await req.json()
+                            sessionKey = resp["session"]
+                        data = {"sessionKey": sessionKey, "qq": ${{ secrets.CF_QQID_IBM }}}
+                        async with session.post(url="http://127.0.0.1:8090/verify", json=data) as req:
+                            resp = await req.json()
+                        while True:
+                            hh = datetime.datetime.utcnow().hour + 8
+                            mm = datetime.datetime.now().minute
+                            resp = "现在是" + str(hh) + "时" + str(mm) + "分"
+                            data = {"sessionKey": sessionKey, "target": ${{ secrets.OK_ALIVE }}, "messageChain": [{ "type": "Plain", "text": resp}]}
+                            async with session.post(url="http://127.0.0.1:8090/sendFriendMessage", json=data) as req:
+                                resp = await req.json()
+                                delay = random.randint(2, 5)
+                                delay = delay * 60
+                                await asyncio.sleep(delay)
+                except:
+                    await asyncio.sleep(5)
+                    retry = True
+        asyncio.get_event_loop().run_until_complete(main())
+        EOF
+        
         cat > Dockerfile << EOF
-        FROM openjdk:8-jre
+        FROM python:slim
         COPY . .
-        CMD java -cp "./libs/*" net.mamoe.mirai.console.terminal.MiraiConsoleTerminalLoader $*
+        RUN pip install --no-cache-dir -r requirements.txt
+        CMD python mirai.py
         EOF
         
         cat > okteto.yml << EOF
