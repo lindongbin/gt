@@ -27,6 +27,7 @@ jobs:
         java -jar apktool_2.5.0.jar d fenix-${ver}-arm64-v8a.apk -o v8a
         
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v7a/apktool.yml
+        sed -i 's/baidu/unknown/g' v7a/assets/extensions/webcompat/data/ua_overrides.js
         sed -i 's/browser.safebrowsing.malware.enabled/unknown/' v7a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
         sed -i 's/browser.safebrowsing.phishing.enabled/unknown/' v7a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
         sed -i 's/^.*iget-boolean.*showSecretDebugMenuThisSession:Z$/    const\/4 v0, 0x1/' v7a/smali_classes2/org/mozilla/fenix/utils/Settings.smali
@@ -34,6 +35,7 @@ jobs:
         sed -i 's/const\/4 v0, 0x0/const\/4 v0, 0x1/g' v7a/smali_classes2/org/mozilla/fenix/ReleaseChannel.smali
         
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v8a/apktool.yml
+        sed -i 's/baidu/unknown/g' v8a/assets/extensions/webcompat/data/ua_overrides.js
         sed -i 's/browser.safebrowsing.malware.enabled/unknown/' v8a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
         sed -i 's/browser.safebrowsing.phishing.enabled/unknown/' v8a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
         sed -i 's/^.*iget-boolean.*showSecretDebugMenuThisSession:Z$/    const\/4 v0, 0x1/' v8a/smali_classes2/org/mozilla/fenix/utils/Settings.smali
