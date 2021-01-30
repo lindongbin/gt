@@ -1,0 +1,76 @@
+name: create-collection
+
+on:
+  schedule:
+    - cron: "0 2 * * 6"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install aiohttp
+
+    - name: Create python file
+      run: |
+        cat > addons.py << EOF
+        import asyncio, aiohttp, json
+        async def getaddons(url):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url=url) as req:
+                    resp = await req.json()
+                for i in range(len(resp["results"])):
+                    resp["results"][i]["addon"]["contributions_url"] = ""
+                    resp["results"][i]["addon"]["current_version"]["edit_url"] = None
+                    resp["results"][i]["addon"]["current_version"]["files"][0]["permissions"] = None
+                    resp["results"][i]["addon"]["current_version"]["license"] = None
+                    resp["results"][i]["addon"]["current_version"]["release_notes"] = None
+                    resp["results"][i]["addon"]["description"] = None
+                    resp["results"][i]["addon"]["developer_comments"] = None
+                    resp["results"][i]["addon"]["edit_url"] = None
+                    resp["results"][i]["addon"]["homepage"] = None
+                    resp["results"][i]["addon"]["icons"] = None
+                    resp["results"][i]["addon"]["previews"] = None
+                    resp["results"][i]["addon"]["ratings_url"] = None
+                    resp["results"][i]["addon"]["review_url"] = None
+                    resp["results"][i]["addon"]["summary"] = None
+                    resp["results"][i]["addon"]["support_email"] = None
+                    resp["results"][i]["addon"]["support_url"] = None
+                    resp["results"][i]["addon"]["tags"] = None
+                return resp
+        async def main():
+            url = "https://addons.mozilla.org/api/v4/accounts/account/lindongbin/collections/fenix/addons/?page_size=50&sort=name"
+            addons = await getaddons(url)
+            page_count = addons["page_count"]
+            addon = addons["results"]
+            if page_count > 1:
+                for page in range(2, page_count + 1):
+                    url = "https://addons.mozilla.org/api/v4/accounts/account/lindongbin/collections/fenix/addons/?page=" + str(page) + "&page_size=50&sort=name"
+                    resp = await getaddons(url)
+                    addon = addon + resp["results"]
+            addons["results"] = addon
+            addons = json.dumps(addons)
+            with open("addons.json","w") as f:
+                f.write(addons)
+        asyncio.get_event_loop().run_until_complete(main())
+        EOF
+
+    - name: Run python file
+      run: |
+        python addons.py
+        
+    - name: Commit files
+      run: |
+        git config user.name lindongbin
+        git config user.email lin.crk@gmail.com
+        git add "addons.json"
+        git commit -m "Update addons.json"
+        git push
