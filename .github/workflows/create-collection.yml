@@ -1,8 +1,6 @@
 name: create-collection
 
 on:
-  schedule:
-    - cron: "0 2 * * 6"
   workflow_dispatch:
 
 jobs:
@@ -30,7 +28,7 @@ jobs:
                 for i in range(len(resp["results"])):
                     resp["results"][i]["addon"]["contributions_url"] = ""
                     resp["results"][i]["addon"]["current_version"]["edit_url"] = None
-                    resp["results"][i]["addon"]["current_version"]["files"][0]["permissions"] = None
+                    #resp["results"][i]["addon"]["current_version"]["files"][0]["permissions"] = None
                     resp["results"][i]["addon"]["current_version"]["license"] = None
                     resp["results"][i]["addon"]["current_version"]["release_notes"] = None
                     resp["results"][i]["addon"]["description"] = None
