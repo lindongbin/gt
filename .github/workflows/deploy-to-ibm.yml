@@ -79,7 +79,6 @@ jobs:
         
         cat > mirai.py << EOF
         import os, json, random, asyncio, aiohttp, datetime
-        img = "pixiv.png"
         async def pixiv():
             try:
                 async with aiohttp.ClientSession() as session:
@@ -95,17 +94,17 @@ jobs:
                     async with session.get(url=url) as req:
                         resp = await req.read()
                     resp = json.loads(resp)["body"][0]["urls"]["original"]
-                    global img
-                    if os.path.exists(img):
-                        os.remove(img)
                     img = resp.split("/")[-1]
-                    headers = {'Referer':'https://app-api.pixiv.net/'}
-                    async with session.get(url=resp, headers=headers) as req:
-                        resp = await req.read()
-                        with open(img, "wb") as f:
-                            f.write(resp)
-                resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：" + str(illust_id)}}, {"type": "image", "data": {"file": "file:///" + os.path.realpath(img)}}]}}
-                return resp
+                    if os.path.exists(img):
+                        return
+                    else:
+                        headers = {'Referer':'https://app-api.pixiv.net/'}
+                        async with session.get(url=resp, headers=headers) as req:
+                            resp = await req.read()
+                            with open(img, "wb") as f:
+                                f.write(resp)
+                        resp = {"action": "send_group_msg", "params": {"group_id": ${{ secrets.CF_QQUN_IBM }}, "message": [{"type": "text", "data": {"text": "标题：" + title +"\n作者：" + user_name + "\n来源：" + str(illust_id)}}, {"type": "image", "data": {"file": "file:///" + os.path.realpath(img)}}]}}
+                        return resp
             except:
                 return
         async def main():
@@ -123,9 +122,11 @@ jobs:
                                     resp = await pixiv()
                                     if resp:
                                         await ws.send_json(resp)
-                                delay = random.randint(10, 15)
-                                delay = delay * 60
-                                await asyncio.sleep(delay)
+                                        delay = random.randint(10, 15)
+                                        delay = delay * 60
+                                        await asyncio.sleep(delay)
+                                    else:
+                                        await asyncio.sleep(30)
                 except:
                     await asyncio.sleep(5)
                     retry = True
