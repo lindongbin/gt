@@ -52,7 +52,10 @@ jobs:
                     addon["icon_url"] = data["icon_url"]
                     addon["last_updated"] = data["last_updated"]
                     addon["name"] = data["name"]
-                    addon["ratings"] = data["ratings"]
+                    addon["ratings"] = {
+                        "average": data["ratings"]["average"],
+                        "count": data["ratings"]["count"]
+                    }
                     addon["summary"] = None
                     addon["url"] = data["url"]
                     addons = addons + [{"addon": addon}]
