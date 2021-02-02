@@ -1,8 +1,6 @@
 name: create-collection
 
 on:
-  schedule:
-    - cron: "0 2 * * 6"
   workflow_dispatch:
 
 jobs:
@@ -63,12 +61,12 @@ jobs:
                 results["results"] = addons
                 return page_count, results
         async def main():
-            url = "https://addons.mozilla.org/api/v4/accounts/account/lindongbin/collections/fenix/addons/?page_size=50&sort=name"
+            url = "https://addons.mozilla.org/api/v5/accounts/account/lindongbin/collections/fenix/addons/?page_size=50&sort=name"
             page_count, addons = await getaddons(url)
             addon = addons["results"]
             if page_count > 1:
                 for page in range(2, page_count + 1):
-                    url = "https://addons.mozilla.org/api/v4/accounts/account/lindongbin/collections/fenix/addons/?page=" + str(page) + "&page_size=50&sort=name"
+                    url = "https://addons.mozilla.org/api/v5/accounts/account/lindongbin/collections/fenix/addons/?page=" + str(page) + "&page_size=50&sort=name"
                     resp = await getaddons(url)
                     addon = addon + resp[1]["results"]
             addons["results"] = addon
