@@ -30,17 +30,23 @@ jobs:
         sed -i 's/baidu/unknown/g' v7a/assets/extensions/webcompat/data/ua_overrides.js
         sed -i 's/browser.safebrowsing.malware.enabled/unknown/' v7a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
         sed -i 's/browser.safebrowsing.phishing.enabled/unknown/' v7a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
-        sed -i 's/^.*iget-boolean.*showSecretDebugMenuThisSession:Z$/    const\/4 v0, 0x1/' v7a/smali_classes2/org/mozilla/fenix/utils/Settings.smali
         sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v7a/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\$Builder.smali
-        sed -i 's/const\/4 v0, 0x0/const\/4 v0, 0x1/g' v7a/smali_classes2/org/mozilla/fenix/ReleaseChannel.smali
+        sed -i 's/"geckoViewAddons"/"unknown"/' v7a/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i 's/"nativeMessaging"/"unknown"/' v7a/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i '/invoke-direct\/range {v1 \.\. v11}/i\    const-string v2, "https:\/\/cdn.jsdelivr.net\/gh\/lindongbin\/gt@latest\/addons_all.json"' v7a/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
+        sed -i 's/android\/downloads/firefox\/downloads/' v7a/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
+        sed -i 's/if-eqz p1, :cond_a/goto :cond_a/' v7a/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v8a/apktool.yml
         sed -i 's/baidu/unknown/g' v8a/assets/extensions/webcompat/data/ua_overrides.js
         sed -i 's/browser.safebrowsing.malware.enabled/unknown/' v8a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
         sed -i 's/browser.safebrowsing.phishing.enabled/unknown/' v8a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
-        sed -i 's/^.*iget-boolean.*showSecretDebugMenuThisSession:Z$/    const\/4 v0, 0x1/' v8a/smali_classes2/org/mozilla/fenix/utils/Settings.smali
         sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v8a/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\$Builder.smali
-        sed -i 's/const\/4 v0, 0x0/const\/4 v0, 0x1/g' v8a/smali_classes2/org/mozilla/fenix/ReleaseChannel.smali
+        sed -i 's/"geckoViewAddons"/"unknown"/' v8a/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i 's/"nativeMessaging"/"unknown"/' v8a/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i '/invoke-direct\/range {v1 \.\. v11}/i\    const-string v2, "https:\/\/cdn.jsdelivr.net\/gh\/lindongbin\/gt@latest\/addons_all.json"' v8a/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
+        sed -i 's/android\/downloads/firefox\/downloads/' v8a/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
+        sed -i 's/if-eqz p1, :cond_a/goto :cond_a/' v8a/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         
         java -jar apktool_2.5.0.jar b v7a -o v7a.apk --use-aapt2
         java -jar apktool_2.5.0.jar b v8a -o v8a.apk --use-aapt2
