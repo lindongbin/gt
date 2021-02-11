@@ -1,7 +1,8 @@
 name: auto-push-collection
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: "0 21 * * */2"
 
 jobs:
   build:
@@ -85,6 +86,7 @@ jobs:
       run: |
         git config user.name lindongbin
         git config user.email lin.crk@gmail.com
+        git push origin :addons
         git checkout --orphan addons
         git rm -rf .
         git add "addons.json"
