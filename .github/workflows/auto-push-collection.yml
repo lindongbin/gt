@@ -1,4 +1,4 @@
-name: create-collection-all
+name: auto-push-collection
 
 on:
   workflow_dispatch:
@@ -72,7 +72,7 @@ jobs:
                     addon = addon + resp[1]["results"]
             addons["results"] = addon
             addons = json.dumps(addons)
-            with open("addons_all.json","w") as f:
+            with open("addons.json","w") as f:
                 f.write(addons)
         asyncio.get_event_loop().run_until_complete(main())
         EOF
@@ -85,6 +85,8 @@ jobs:
       run: |
         git config user.name lindongbin
         git config user.email lin.crk@gmail.com
-        git add "addons_all.json"
-        git commit -m "Update addons_all.json"
-        git push
+        git checkout --orphan addons
+        git rm -rf .
+        git add "addons.json"
+        git commit -m "Update addons.json"
+        git push --set-upstream origin addons
