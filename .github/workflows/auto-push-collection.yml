@@ -2,7 +2,7 @@ name: auto-push-collection
 
 on:
   schedule:
-    - cron: "0 21 * * */2"
+    - cron: "0 21 * * *"
 
 jobs:
   build:
@@ -92,3 +92,7 @@ jobs:
         git add "addons.json"
         git commit -m "Update addons.json"
         git push --set-upstream origin addons
+        
+    - name: Refresh collection
+      run: |
+        curl https://purge.jsdelivr.net/gh/lindongbin/gt@addons/addons.json
