@@ -35,7 +35,7 @@ jobs:
         sed -i 's/android\/downloads/firefox\/downloads/' v7a/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
         sed -i 's/if-eqz p1, :cond_a/goto :cond_a/' v7a/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v7a/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
-        sed -i 's/0x5a0/0x2d0/g' v7a/smali_classes2/org/mozilla/fenix/components/Components\$addonCollectionProvider\$2.smali
+        sed -i 's/0xb40/0x2d0/g' v7a/smali_classes2/org/mozilla/fenix/components/Components\$addonCollectionProvider\$2.smali
         
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v8a/apktool.yml
         sed -i 's/baidu/unknown/g' v8a/assets/extensions/webcompat/data/ua_overrides.js
@@ -46,7 +46,7 @@ jobs:
         sed -i 's/android\/downloads/firefox\/downloads/' v8a/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
         sed -i 's/if-eqz p1, :cond_a/goto :cond_a/' v8a/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v8a/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
-        sed -i 's/0x5a0/0x2d0/g' v8a/smali_classes2/org/mozilla/fenix/components/Components\$addonCollectionProvider\$2.smali
+        sed -i 's/0xb40/0x2d0/g' v8a/smali_classes2/org/mozilla/fenix/components/Components\$addonCollectionProvider\$2.smali
         
         java -jar apktool_2.5.0.jar b v7a -o v7a.apk --use-aapt2
         java -jar apktool_2.5.0.jar b v8a -o v8a.apk --use-aapt2
