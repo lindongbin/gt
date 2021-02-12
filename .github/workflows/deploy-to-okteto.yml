@@ -14,13 +14,11 @@ jobs:
         wget -q https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jre_x64_linux_11.0.9.1_1.tar.gz
         tar -zxf OpenJDK11U-jre_x64_linux_11.0.9.1_1.tar.gz
         
-        ver=$(curl -sL https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-core-all/maven-metadata.xml | grep "release" | sed 's/<release>//g' | sed 's/<\/release>//g' | sed 's/ //g')
-        wget -q -P ./libs https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-core-all/${ver}/mirai-core-all-${ver}-all.jar
-        ver=$(curl -sL https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console/maven-metadata.xml | grep "release" | sed 's/<release>//g' | sed 's/<\/release>//g' | sed 's/ //g')
-        wget -q -P ./libs https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console/${ver}/mirai-console-${ver}-all.jar
-        ver=$(curl -sL https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console-terminal/maven-metadata.xml | grep "release" | sed 's/<release>//g' | sed 's/<\/release>//g' | sed 's/ //g')
-        wget -q -P ./libs https://dl.bintray.com/him188moe/mirai/net/mamoe/mirai-console-terminal/${ver}/mirai-console-terminal-${ver}-all.jar
-        ver=$(curl -sL https://api.github.com/repos/project-mirai/mirai-api-http/releases?per_page=1 | sed 's/,/\n/g' | grep "tag_name" | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g')
+        ver=$(curl -sL https://api.github.com/repos/mamoe/mirai/releases/latest | sed 's/,/\n/g' | grep "tag_name" | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g')
+        wget -q -P ./libs https://repo1.maven.org/maven2/net/mamoe/mirai-core-all/${ver}/mirai-core-all-${ver}-all.jar
+        wget -q -P ./libs https://repo1.maven.org/maven2/net/mamoe/mirai-console/${ver}/mirai-console-${ver}-all.jar
+        wget -q -P ./libs https://repo1.maven.org/maven2/net/mamoe/mirai-console-terminal/${ver}/mirai-console-terminal-${ver}-all.jar
+        ver=$(curl -sL https://api.github.com/repos/project-mirai/mirai-api-http/releases/latest | sed 's/,/\n/g' | grep "tag_name" | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g')
         wget -q -P ./plugins https://github.com/project-mirai/mirai-api-http/releases/download/${ver}/mirai-api-http-${ver}.mirai.jar
         
         cat > device.json << EOF
@@ -92,6 +90,8 @@ jobs:
                             resp = await req.json()
                         while True:
                             hh = datetime.datetime.utcnow().hour + 8
+                            if hh >= 24:
+                                hh = hh - 24
                             mm = datetime.datetime.now().minute
                             resp = "现在是" + str(hh) + "时" + str(mm) + "分"
                             data = {"sessionKey": sessionKey, "target": ${{ secrets.OK_ALIVE }}, "messageChain": [{ "type": "Plain", "text": resp}]}
