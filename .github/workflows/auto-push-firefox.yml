@@ -31,7 +31,7 @@ jobs:
         sed -i 's/baidu/unknown/g' v7a/assets/extensions/webcompat/data/ua_overrides.js
         sed -i 's/browser.safebrowsing.malware.enabled/unknown/;s/browser.safebrowsing.phishing.enabled/unknown/' v7a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
         sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v7a/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\$Builder.smali
-        sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/' v7a/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v7a/smali/mozilla/components/feature/addons/AddonManager.smali
         sed -i 's/android\/downloads/firefox\/downloads/' v7a/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
         sed -i 's/if-eqz p1, :cond_a/goto :cond_a/' v7a/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v7a/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
@@ -54,7 +54,7 @@ jobs:
         sed -i 's/baidu/unknown/g' v8a/assets/extensions/webcompat/data/ua_overrides.js
         sed -i 's/browser.safebrowsing.malware.enabled/unknown/;s/browser.safebrowsing.phishing.enabled/unknown/' v8a/smali_classes2/org/mozilla/geckoview/ContentBlocking\$Settings.smali
         sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v8a/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\$Builder.smali
-        sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/' v8a/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v8a/smali/mozilla/components/feature/addons/AddonManager.smali
         sed -i 's/android\/downloads/firefox\/downloads/' v8a/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
         sed -i 's/if-eqz p1, :cond_a/goto :cond_a/' v8a/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v8a/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
