@@ -2,7 +2,7 @@ name: auto-push-collection
 
 on:
   schedule:
-    - cron: "0 21 * * *"
+    - cron: "0 9,21 * * *"
 
 jobs:
   build:
