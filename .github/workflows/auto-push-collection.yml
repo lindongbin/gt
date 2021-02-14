@@ -86,12 +86,11 @@ jobs:
       run: |
         git config user.name lindongbin
         git config user.email lin.crk@gmail.com
-        git push origin :addons
         git checkout --orphan addons
         git rm -rf .
         git add "addons.json"
         git commit -m "Update addons.json"
-        git push --set-upstream origin addons
+        git push --force origin addons:addons
         
     - name: Refresh collection
       run: |
