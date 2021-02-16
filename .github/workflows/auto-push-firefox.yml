@@ -41,13 +41,16 @@ jobs:
             invoke-direct {v1}, Ljava\/lang\/StringBuilder;-><init>()V\
             const-string v2, "https:\/\/cdn.jsdelivr.net\/gh\/lindongbin\/gt@addons\/addons\.json?t="\
             invoke-virtual {v1, v2}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
-            invoke-static {}, Ljava\/util\/UUID;->randomUUID()Ljava\/util\/UUID;\
-            move-result-object v2\
-            invoke-virtual {v2}, Ljava\/util\/UUID;->toString()Ljava\/lang\/String;\
+            new-instance v2, Ljava\/util\/Date;\
+            invoke-direct {v2}, Ljava\/util\/Date;-><init>()V\
+            invoke-virtual {v2}, Ljava\/util\/Date;->getTime()J\
+            move-result-wide v2\
+            invoke-static {v2, v3}, Ljava\/lang\/String;->valueOf(J)Ljava\/lang\/String;\
             move-result-object v2\
             invoke-virtual {v1, v2}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
             invoke-virtual {v1}, Ljava\/lang\/StringBuilder;->toString()Ljava\/lang\/String;\
             move-result-object v2\
+            const\/4 v3, 0x0\
             move-object v1, v12' v7a/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
         
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v8a/apktool.yml
@@ -64,13 +67,16 @@ jobs:
             invoke-direct {v1}, Ljava\/lang\/StringBuilder;-><init>()V\
             const-string v2, "https:\/\/cdn.jsdelivr.net\/gh\/lindongbin\/gt@addons\/addons\.json?t="\
             invoke-virtual {v1, v2}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
-            invoke-static {}, Ljava\/util\/UUID;->randomUUID()Ljava\/util\/UUID;\
-            move-result-object v2\
-            invoke-virtual {v2}, Ljava\/util\/UUID;->toString()Ljava\/lang\/String;\
+            new-instance v2, Ljava\/util\/Date;\
+            invoke-direct {v2}, Ljava\/util\/Date;-><init>()V\
+            invoke-virtual {v2}, Ljava\/util\/Date;->getTime()J\
+            move-result-wide v2\
+            invoke-static {v2, v3}, Ljava\/lang\/String;->valueOf(J)Ljava\/lang\/String;\
             move-result-object v2\
             invoke-virtual {v1, v2}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
             invoke-virtual {v1}, Ljava\/lang\/StringBuilder;->toString()Ljava\/lang\/String;\
             move-result-object v2\
+            const\/4 v3, 0x0\
             move-object v1, v12' v8a/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
         
         java -jar apktool_2.5.0.jar b v7a -o v7a.apk --use-aapt2
