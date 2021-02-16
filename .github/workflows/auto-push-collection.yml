@@ -2,7 +2,7 @@ name: auto-push-collection
 
 on:
   schedule:
-    - cron: "0 9,21 * * *"
+    - cron: "0 5,13,21 * * *"
 
 jobs:
   build:
@@ -51,7 +51,7 @@ jobs:
                     addon["description"] = None
                     addon["icon_url"] = data["icon_url"]
                     addon["last_updated"] = data["last_updated"]
-                    addon["name"] = data["name"]
+                    addon["name"] = {data["default_locale"]: data["name"][data["default_locale"]]}
                     addon["ratings"] = {
                         "average": data["ratings"]["average"],
                         "count": data["ratings"]["count"]
