@@ -11,8 +11,8 @@ jobs:
 
     - name: Prepare for Deployment
       run: |
-        ver=$(curl -sL https://api.github.com/repos/Mrs4s/go-cqhttp/releases?per_page=1 | sed 's/,/\n/g' | grep "tag_name" | head -n 1 | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g')
-        curl -sL "https://github.com/Mrs4s/go-cqhttp/releases/download/${ver}/go-cqhttp-${ver}-linux-amd64.tar.gz" | tar -zx go-cqhttp
+        url=$(curl -sL https://api.github.com/repos/Mrs4s/go-cqhttp/releases?per_page=1 | grep 'linux-amd64.tar.gz' | grep 'browser_download_url' | sed 's/"/\n/g' | grep 'linux-amd64.tar.gz')
+        curl -sL "${url}" | tar -zx go-cqhttp
         
         cat > device.json << EOF
         {"display":"MIRAI.871355.001","product":"mirai","device":"mirai","board":"mirai","model":"mirai","finger_print":"mamoe/mirai/mirai:10/MIRAI.200122.001/5768199:user/release-keys","boot_id":"e3ddb090-487e-0416-6c1a-bee0c59d45d6","proc_version":"Linux version 3.0.31-5aQF5uaS (android-build@xxx.xxx.xxx.xxx.com)","protocol":0,"imei":"531686398009843"}
