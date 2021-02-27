@@ -17,15 +17,21 @@ jobs:
 
     - name: Download and mod fenix
       run: |
+        cat > firefox.sh << EOF
+        wget -q -O "resp32" url32
+        wget -q -O "resp64" url64
+        EOF
+
+        chmod +x ./firefox.sh
+
+        cat > mobile.sh << EOF
         wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.5.0/apktool_2.5.0.jar
         
-        ver=$(curl -sL https://api.github.com/repos/mozilla-mobile/fenix/releases/latest | sed 's/,/\n/g' | grep "tag_name" | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ v//g')
-        #ver=$(curl -sL https://ftp.mozilla.org/pub/firefox/releases/ | grep "href" | sed 's/>/\n/g' | grep "/a" | sed 's/\//\n/g' | grep -v -E "<|[a-z]" | sort -t "." -k 1nr -k 2nr -k 3nr | head -n 1)
-        wget -q https://github.com/mozilla-mobile/fenix/releases/download/v${ver}/fenix-${ver}-armeabi-v7a.apk
-        wget -q https://github.com/mozilla-mobile/fenix/releases/download/v${ver}/fenix-${ver}-arm64-v8a.apk
+        wget -q url32m
+        wget -q url64m
         
-        java -jar apktool_2.5.0.jar d fenix-${ver}-armeabi-v7a.apk -o v7a
-        java -jar apktool_2.5.0.jar d fenix-${ver}-arm64-v8a.apk -o v8a
+        java -jar apktool_2.5.0.jar d resp32m -o v7a
+        java -jar apktool_2.5.0.jar d resp64m -o v8a
         
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v7a/apktool.yml
         sed -i 's/baidu/unknown/g' v7a/assets/extensions/webcompat/data/ua_overrides.js
@@ -90,28 +96,27 @@ jobs:
         
         wget -q https://github.com/lindongbin/gt/raw/master/apksigner.jar
         wget -q https://github.com/lindongbin/gt/raw/master/apksigner.jks
-        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out fenix-${ver}-armeabi-v7a-mod.apk v7a-align.apk
-        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out fenix-${ver}-arm64-v8a-mod.apk v8a-align.apk
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out resp32mm v7a-align.apk
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out resp64mm v8a-align.apk
+        EOF
+
+        chmod +x ./mobile.sh
 
     - name: Install dependencies
       run: |
-        pip install lanzou-api
+        pip install aiohttp
         
     - name: Create python file
       run: |
-        cat > releases.py << EOF
-        import asyncio, aiohttp, json, re
-        async def upload(dlurl, filename):
+        cat > firefox.py << EOF
+        import asyncio, aiohttp, json, re, os
+        async def upload(filename):
             cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
             headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'}
-            async with aiohttp.ClientSession() as session:
-                async with session.get(dlurl) as req:
-                    resp = await req.read()
             url = "https://pc.woozooo.com/fileup.php"
             fields={"task": "1", "folder_id": "${{ secrets.lzy_folder_id }}", "id": "WU_FILE_0", "name": filename, "type": "application/octet-stream"}
-            files=(filename, resp, 'application/octet-stream')
             with aiohttp.MultipartWriter("form-data") as mpwriter:
-                part = mpwriter.append(resp)
+                part = mpwriter.append(open(filename, 'rb'))
                 part.set_content_disposition('form-data', name="upload_file", filename=filename)
                 for key, value in fields.items():
                   part = mpwriter.append(value)
@@ -147,12 +152,19 @@ jobs:
                 url64 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win64/zh-CN/Firefox%20Setup%20" + resp + ".exe"
                 resp32 = "firefox-" + resp + "-win32.exe"
                 resp64 = "firefox-" + resp + "-win64.exe"
+                if files.find(resp32) == -1 or files.find(resp64) == -1:
+                    with open('firefox.sh','+r') as f:
+                        t = f.read()
+                        t = t.replace('url32', url32).replace('url64', url64).replace('resp32', resp32).replace('resp64', resp64)
+                        f.seek(0, 0)
+                        f.write(t)
+                    os.system("./firefox.sh")
                 if files.find(resp32) == -1:
-                    await upload(url32, resp32)
+                    await upload(resp32)
                 else:
                     print(resp32 + "已存在")
                 if files.find(resp64) == -1:
-                    await upload(url64, resp64)
+                    await upload(resp64)
                 else:
                     print(resp64 + "已存在")
                 url = "https://api.github.com/repos/mozilla-mobile/fenix/releases/latest"
@@ -164,61 +176,32 @@ jobs:
                     url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
                     resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
                     resp64m = "fenix-" + resp + "-arm64-v8a.apk"
+                    resp32mm = "fenix-" + resp + "-armeabi-v7a-mod.apk"
+                    resp64mm = "fenix-" + resp + "-arm64-v8a-mod.apk"
+                    if files.find(resp32m) == -1 or files.find(resp64m) == -1 or files.find(resp32mm) == -1 or files.find(resp64mm) == -1:
+                        with open('mobile.sh','+r') as f:
+                            t = f.read()
+                            t = t.replace('url32m', url32m).replace('url64m', url64m).replace('resp32mm', resp32mm).replace('resp64mm', resp64mm).replace('resp32m', resp32m).replace('resp64m', resp64m)
+                            f.seek(0, 0)
+                            f.write(t)
+                        os.system("./mobile.sh")
                     if files.find(resp32m) == -1:
-                        await upload(url32m, resp32m)
+                        await upload(resp32m)
                     else:
                         print(resp32m + "已存在")
                     if files.find(resp64m) == -1:
-                        await upload(url64m, resp64m)
+                        await upload(resp64m)
                     else:
                         print(resp64m + "已存在")
+                    if files.find(resp32mm) == -1:
+                        await upload(resp32mm)
+                    else:
+                        print(resp32mm + "已存在")
+                    if files.find(resp64mm) == -1:
+                        await upload(resp64mm)
+                    else:
+                        print(resp64mm + "已存在")
         asyncio.get_event_loop().run_until_complete(main())
-        EOF
-      
-        cat > firefox.py << EOF
-        import urllib, json, re
-        from lanzou.api import LanZouCloud
-        resp = urllib.request.urlopen("https://ftp.mozilla.org/pub/firefox/releases/")
-        resp = resp.read().decode()
-        resp1 = re.findall(r'(?<=">)\d+\.\d+(?=/<)', resp)
-        resp1.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1])))
-        resp1 = resp1[-1]
-        resp2 = re.findall(r'(?<=">)\d+\.\d+\.\d+(?=/<)', resp)
-        resp2.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1]), int(x.split(".")[2])))
-        resp2 = resp2[-1]
-        if resp1.split(".")[0] == resp2.split(".")[0]:
-            resp = resp2
-        else:
-            resp = resp1
-        url32 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win32/zh-CN/Firefox%20Setup%20" + resp + ".exe"
-        url64 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win64/zh-CN/Firefox%20Setup%20" + resp + ".exe"
-        resp32 = "firefox-" + resp + "-win32.exe"
-        resp64 = "firefox-" + resp + "-win64.exe"
-        resp = urllib.request.urlopen("https://api.github.com/repos/mozilla-mobile/fenix/releases/latest")
-        resp = json.loads(resp.read().decode())["tag_name"].replace("v", "")
-        resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
-        resp64m = "fenix-" + resp + "-arm64-v8a.apk"
-        resp32mm = "fenix-" + resp + "-armeabi-v7a-mod.apk"
-        resp64mm = "fenix-" + resp + "-arm64-v8a-mod.apk"
-        lzy = LanZouCloud()
-        cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
-        if lzy.login_by_cookie(cookie) == LanZouCloud.SUCCESS:
-            files = lzy.get_file_list(${{ secrets.lzy_folder_id }})
-            if files.find_by_name(resp32) is None:
-                urllib.request.urlretrieve(url32, resp32)
-                lzy.upload_file(resp32, ${{ secrets.lzy_folder_id }})
-            if files.find_by_name(resp64) is None:
-                urllib.request.urlretrieve(url64, resp64)
-                lzy.upload_file(resp64, ${{ secrets.lzy_folder_id }})
-            if resp.find("rc") == -1:
-                if files.find_by_name(resp32m) is None:
-                    lzy.upload_file(resp32m, ${{ secrets.lzy_folder_id }})
-                if files.find_by_name(resp64m) is None:
-                    lzy.upload_file(resp64m, ${{ secrets.lzy_folder_id }})
-                if files.find_by_name(resp32mm) is None:
-                    lzy.upload_file(resp32mm, ${{ secrets.lzy_folder_id }})
-                if files.find_by_name(resp64mm) is None:
-                    lzy.upload_file(resp64mm, ${{ secrets.lzy_folder_id }})
         EOF
         
     - name: Run python file
