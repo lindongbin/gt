@@ -99,6 +99,82 @@ jobs:
         
     - name: Create python file
       run: |
+        cat > releases.py << EOF
+        import asyncio, aiohttp, json, re
+        async def upload(dlurl, filename):
+            cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
+            headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'}
+            async with aiohttp.ClientSession() as session:
+                async with session.get(dlurl) as req:
+                    resp = await req.read()
+            url = "https://pc.woozooo.com/fileup.php"
+            fields={"task": "1", "folder_id": "${{ secrets.lzy_folder_id }}", "id": "WU_FILE_0", "name": filename, "type": "application/octet-stream"}
+            files=(filename, resp, 'application/octet-stream')
+            with aiohttp.MultipartWriter("form-data") as mpwriter:
+                part = mpwriter.append(resp)
+                part.set_content_disposition('form-data', name="upload_file", filename=filename)
+                for key, value in fields.items():
+                  part = mpwriter.append(value)
+                  part.set_content_disposition('form-data', name=key)
+                headers["Content-Type"] = mpwriter.content_type
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=url, headers=headers, data=mpwriter, cookies=cookies, timeout=0) as req:
+                    resp = await req.read()
+                    resp = json.loads(resp)["info"]
+                    print(filename + resp)
+        async def main():
+            cookie = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
+            headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'}
+            url = "https://pc.woozooo.com/doupload.php"
+            data = {'task': 5, 'folder_id': ${{ secrets.lzy_folder_id }}, 'pg': 1}
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=url, data=data, headers=headers, cookies=cookies) as req:
+                    files = await req.text()
+                url = "https://ftp.mozilla.org/pub/firefox/releases/"
+                async with session.get(url=url) as req:
+                    resp = await req.text()
+                resp1 = re.findall(r'(?<=">)\d+\.\d+(?=/<)', resp)
+                resp1.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1])))
+                resp1 = resp1[-1]
+                resp2 = re.findall(r'(?<=">)\d+\.\d+\.\d+(?=/<)', resp)
+                resp2.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1]), int(x.split(".")[2])))
+                resp2 = resp2[-1]
+                if resp1.split(".")[0] == resp2.split(".")[0]:
+                    resp = resp2
+                else:
+                    resp = resp1
+                url32 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win32/zh-CN/Firefox%20Setup%20" + resp + ".exe"
+                url64 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win64/zh-CN/Firefox%20Setup%20" + resp + ".exe"
+                resp32 = "firefox-" + resp + "-win32.exe"
+                resp64 = "firefox-" + resp + "-win64.exe"
+                if files.find(resp32) == -1:
+                    await upload(url32, resp32)
+                else:
+                    print(resp32 + "已存在")
+                if files.find(resp64) == -1:
+                    await upload(url64, resp64)
+                else:
+                    print(resp64 + "已存在")
+                url = "https://api.github.com/repos/mozilla-mobile/fenix/releases/latest"
+                async with session.get(url=url) as req:
+                    resp = await req.read()
+                resp = json.loads(resp)["tag_name"].replace("v", "")
+                if resp.find("rc") == -1:
+                    url32m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-armeabi-v7a.apk"
+                    url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
+                    resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
+                    resp64m = "fenix-" + resp + "-arm64-v8a.apk"
+                    if files.find(resp32m) == -1:
+                        await upload(url32m, resp32m)
+                    else:
+                        print(resp32m + "已存在")
+                    if files.find(resp64m) == -1:
+                        await upload(url64m, resp64m)
+                    else:
+                        print(resp64m + "已存在")
+        asyncio.get_event_loop().run_until_complete(main())
+        EOF
+      
         cat > firefox.py << EOF
         import urllib, json, re
         from lanzou.api import LanZouCloud
