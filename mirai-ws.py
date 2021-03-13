@@ -178,6 +178,28 @@ async def ws_group(ws, recv_data):
         bot = recv_data["self_id"]
         permission = recv_data["sender"]["role"]
 
+        if sender == bot:
+            await asyncio.sleep(180)
+            sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
+            await ws.send_json(sendmsg)
+            return
+
+        global answer
+        if str(sender) in answer:
+            if answer[str(sender)] == message.strip():
+                del answer[str(sender)]
+                sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n验证通过，群内发言请遵守相关法律法规。"}}]}}
+                await ws.send_json(sendmsg)
+                sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
+                await ws.send_json(sendmsg)
+                return
+            else:
+                sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n验证失败，请输入正确答案。"}}]}}
+                await ws.send_json(sendmsg)
+                sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
+                await ws.send_json(sendmsg)
+                return
+
         hh = datetime.datetime.utcnow().hour + 8
         if hh >= 24:
             hh = hh - 24
@@ -330,6 +352,67 @@ async def ws_event(ws, recv_data):
                 await ws.send_json(sendmsg)
                 return
 
+fstpc = 0
+fstmo = 0
+pcver = ""
+mover = ""
+
+async def chkver():
+    try:
+        global fstpc
+        global fstmo
+        global pcver
+        global mover
+        url = "https://pc.woozooo.com/doupload.php"
+        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'}
+        data = {'task': 5, 'folder_id': , 'pg': 1}  
+        cookies = {'ylogin': '', 'phpdisk_info': ''}
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url=url, data=data, headers=headers, cookies=cookies) as req:
+                files = await req.text()
+            url = "https://ftp.mozilla.org/pub/firefox/releases/"
+            async with session.get(url=url) as req:
+                resp = await req.text()
+            resp1 = re.findall(r'(?<=">)\d+\.\d+(?=/<)', resp)
+            resp1.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1])))
+            resp1 = resp1[-1]
+            resp2 = re.findall(r'(?<=">)\d+\.\d+\.\d+(?=/<)', resp)
+            resp2.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1]), int(x.split(".")[2])))
+            resp2 = resp2[-1]
+            if resp1.split(".")[0] == resp2.split(".")[0]:
+                resp = resp2
+            else:
+                resp = resp1
+            pv = resp
+            if fstpc == 0:
+                pcver = pv
+                fstpc = 1
+            url = "https://api.github.com/repos/mozilla-mobile/fenix/releases/latest"
+            async with session.get(url=url) as req:
+                resp = await req.read()
+            mv = json.loads(resp)["tag_name"].replace("v", "")
+            if fstmo == 0:
+                mover = mv
+                fstmo = 1
+            sendmsg = ""
+            pv32 = "firefox-" + pv + "-win32.exe"
+            pv64 = "firefox-" + pv + "-win64.exe"
+            if pcver != pv and files.find(pv32) > -1 and files.find(pv64) > -1:
+                sendmsg = sendmsg + "国际版火狐v" + pv + "已发布"
+                pcver = pv
+            mv32 = "fenix-" + mv + "-armeabi-v7a.apk"
+            mv64 = "fenix-" + mv + "-arm64-v8a.apk"
+            if mover != mv and files.find(mv32) > -1 and files.find(mv64) > -1:
+                if sendmsg != "":
+                    sendmsg = sendmsg + "\n"
+                sendmsg = sendmsg + "安卓版火狐v" + mv + "已发布"
+                mover = mv
+            if sendmsg != "":
+                sendmsg = {"action": "send_group_msg", "params": {"group_id": , "message": [{"type": "at","data": {"qq": "all"}}, {"type": "text", "data": {"text": "\n" + sendmsg}}]}}
+            return sendmsg
+    except:
+        return ""
+
 async def alive(ws):
     while True:
         hh = datetime.datetime.utcnow().hour + 8
@@ -339,15 +422,21 @@ async def alive(ws):
         resp = "现在是" + str(hh) + "时" + str(mm) + "分"
         sendmsg = {"action": "send_private_msg", "params": {"user_id": 8482303, "message": resp}}
         await ws.send_json(sendmsg)
+        if hh > 7:
+            sendmsg = await chkver()
+            if sendmsg != "":
+                await ws.send_json(sendmsg)
         delay = random.randint(2, 5)
         delay = delay * 60
         await asyncio.sleep(delay)
+
+answer = {}
 
 async def ws_handle(ws, recv_data):
     if recv_data.type == aiohttp.WSMsgType.TEXT:
         recv_data = json.loads(recv_data.data)
         if "post_type" in recv_data:
-            if recv_data["post_type"] == "message":
+            if recv_data["post_type"] == "message" or recv_data["post_type"] == "message_sent":
                 await ws_group(ws, recv_data)
                 return
             if recv_data["post_type"] == "notice":
@@ -365,6 +454,24 @@ async def ws_handle(ws, recv_data):
                             await ws.send_json(sendmsg)
                             await atpadd(str(sender))
                             return
+                        else:
+                            x = random.randint(0, 9)
+                            y = random.randint(0, 9)
+                            z = x + y
+                            global answer
+                            answer[str(sender)] = str(z)
+                            sendmsg = {"action": "send_group_msg", "params": {"group_id": group_id, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n【人机验证】\n请在5分钟内回答以下问题，否则将被踢出：\n" + str(x) + "+" + str(y) + "=?"}}]}}
+                            await ws.send_json(sendmsg)
+                            await asyncio.sleep(120)
+                            if str(sender) in answer:
+                                sendmsg = {"action": "send_group_msg", "params": {"group_id": group_id, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n【人机验证】\n请在3分钟内回答以下问题，否则将被踢出：\n" + str(x) + "+" + str(y) + "=?"}}]}}
+                                await ws.send_json(sendmsg)
+                                await asyncio.sleep(180)
+                                if str(sender) in answer:
+                                    del answer[str(sender)]
+                                    sendmsg = {"action": "set_group_kick", "params": {"group_id": group_id, "user_id": sender, "message": "禁止加入", "reject_add_request": True}}
+                                    await ws.send_json(sendmsg)
+                                    return
 
 async def main():
     retry = True
@@ -375,7 +482,7 @@ async def main():
                     asyncio.get_event_loop().create_task(alive(ws))
                     while True:
                         recv_data = await ws.receive()
-                        await ws_handle(ws, recv_data)
+                        asyncio.get_event_loop().create_task(ws_handle(ws, recv_data))
         except:
             traceback.print_exc()
             await asyncio.sleep(5)
