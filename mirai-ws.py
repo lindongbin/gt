@@ -186,7 +186,7 @@ async def ws_group(ws, recv_data):
 
         global answer
         if str(sender) in answer:
-            if answer[str(sender)] == message.strip():
+            if answer[str(sender)][0] == message.strip():
                 del answer[str(sender)]
                 sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n验证通过，群内发言请遵守相关法律法规。"}}]}}
                 await ws.send_json(sendmsg)
@@ -194,11 +194,22 @@ async def ws_group(ws, recv_data):
                 await ws.send_json(sendmsg)
                 return
             else:
-                sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n验证失败，请输入正确答案。"}}]}}
-                await ws.send_json(sendmsg)
-                sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
-                await ws.send_json(sendmsg)
-                return
+                answer[str(sender)][1] = answer[str(sender)][1] - 1
+                t = answer[str(sender)][1]
+                if t > 0:
+                    sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n验证失败，还剩" + str(t) + "次机会。"}}]}}
+                    await ws.send_json(sendmsg)
+                    sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
+                    await ws.send_json(sendmsg)
+                    return
+                else:
+                    del answer[str(sender)]
+                    sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
+                    await ws.send_json(sendmsg)
+                    sendmsg = {"action": "set_group_kick", "params": {"group_id": group, "user_id": sender, "message": "禁止加入", "reject_add_request": True}}
+                    await ws.send_json(sendmsg)
+                    await atpadd(str(sender))
+                    return
 
         hh = datetime.datetime.utcnow().hour + 8
         if hh >= 24:
@@ -459,7 +470,7 @@ async def ws_handle(ws, recv_data):
                             y = random.randint(0, 9)
                             z = x + y
                             global answer
-                            answer[str(sender)] = str(z)
+                            answer[str(sender)] = [str(z), 3]
                             sendmsg = {"action": "send_group_msg", "params": {"group_id": group_id, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n【人机验证】\n请在5分钟内回答以下问题，否则将被踢出：\n" + str(x) + "+" + str(y) + "=?"}}]}}
                             await ws.send_json(sendmsg)
                             await asyncio.sleep(120)
@@ -471,6 +482,7 @@ async def ws_handle(ws, recv_data):
                                     del answer[str(sender)]
                                     sendmsg = {"action": "set_group_kick", "params": {"group_id": group_id, "user_id": sender, "message": "禁止加入", "reject_add_request": True}}
                                     await ws.send_json(sendmsg)
+                                    await atpadd(str(sender))
                                     return
 
 async def main():
