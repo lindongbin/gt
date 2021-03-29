@@ -2,7 +2,7 @@ name: deploy-to-ibm
 
 on:
   schedule:
-    - cron: "0 17 * * *"
+    - cron: "0 17 */2 * *"
 
 jobs:
   deploy:
@@ -11,7 +11,7 @@ jobs:
 
     - name: Prepare for Deployment
       run: |
-        url=$(curl -sL https://api.github.com/repos/Mrs4s/go-cqhttp/releases?per_page=1 | grep 'linux-amd64.tar.gz' | grep 'browser_download_url' | sed 's/"/\n/g' | grep 'linux-amd64.tar.gz')
+        url=$(curl -sL https://api.github.com/repos/Mrs4s/go-cqhttp/releases?per_page=1 | grep 'linux_amd64.tar.gz' | grep 'browser_download_url' | sed 's/"/\n/g' | grep 'linux_amd64.tar.gz')
         curl -sL "${url}" | tar -zx go-cqhttp
         
         cat > device.json << EOF
