@@ -186,6 +186,11 @@ async def ws_group(ws, recv_data):
 
         global answer
         if str(sender) in answer:
+            r = re.findall(".*?\[(.*?)\].*?", message)
+            if r != []:
+                message = message.replace("[", "").replace("]", "")
+                for i in r:
+                    message = message.replace(i, "")
             if answer[str(sender)][0] == message.strip():
                 del answer[str(sender)]
                 sendmsg = {"action": "send_group_msg", "params": {"group_id": group, "message": [{"type": "at", "data": {"qq": str(sender)}}, {"type": "text", "data": {"text": "\n验证通过，群内发言请遵守相关法律法规。"}}]}}
