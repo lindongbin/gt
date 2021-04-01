@@ -97,21 +97,19 @@ jobs:
                 async with session.get(url=url) as req:
                     resp = await req.read()
                 resp = json.loads(resp)["tag_name"].replace("v", "")
-                if resp.find("rc") == -1:
-                    url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
-                    resp64m = "fenix-" + resp + "-arm64-v8a.apk"
-                    resp64mm = "fenix-" + resp + "-arm64-v8a-mod.apk"
-                    if files.find(resp64mm) == -1:
-                        with open('mobile.sh','+r') as f:
-                            t = f.read()
-                            t = t.replace('url64m', url64m).replace('resp64mm', resp64mm).replace('resp64m', resp64m)
-                            f.seek(0, 0)
-                            f.write(t)
-                        os.system("./mobile.sh")
-                    if files.find(resp64mm) == -1:
-                        await upload(resp64mm)
-                    else:
-                        print(resp64mm + "已存在")
+                url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
+                resp64m = "fenix-" + resp + "-arm64-v8a.apk"
+                resp64mm = "fenix-" + resp + "-arm64-v8a-mod.apk"
+                if files.find(resp64mm) == -1:
+                    with open('mobile.sh','+r') as f:
+                        t = f.read()
+                        t = t.replace('url64m', url64m).replace('resp64mm', resp64mm).replace('resp64m', resp64m)
+                        f.seek(0, 0)
+                        f.write(t)
+                    os.system("./mobile.sh")
+                    await upload(resp64mm)
+                else:
+                    print(resp64mm + "已存在")
         asyncio.get_event_loop().run_until_complete(main())
         EOF
         
