@@ -1,98 +1,124 @@
-name: auto-push-collection
+name: auto-push-firefox
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 23 * * *"
+    - cron: "0 */2 * * 1-5"
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
         python-version: '3.x'
 
+    - name: Create shell file
+      run: |
+        cat > firefox.sh << EOF
+        wget -q -O "resp32" url32
+        wget -q -O "resp64" url64
+        EOF
+        chmod +x ./firefox.sh
+        cat > mobile.sh << EOF
+        wget -q -O "resp32m" url32m
+        wget -q -O "resp64m" url64m
+        EOF
+        chmod +x ./mobile.sh
     - name: Install dependencies
       run: |
         pip install aiohttp
-
+        
     - name: Create python file
       run: |
-        cat > addons.py << EOF
-        import asyncio, aiohttp, json
-        async def getaddons(url):
+        cat > firefox.py << EOF
+        import asyncio, aiohttp, json, re, os
+        async def upload(filename):
+            cookies = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
+            headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'}
+            url = "https://pc.woozooo.com/fileup.php"
+            fields={"task": "1", "folder_id": "${{ secrets.lzy_folder_id }}", "id": "WU_FILE_0", "name": filename, "type": "application/octet-stream"}
+            with aiohttp.MultipartWriter("form-data") as mpwriter:
+                part = mpwriter.append(open(filename, 'rb'))
+                part.set_content_disposition('form-data', name="upload_file", filename=filename)
+                for key, value in fields.items():
+                  part = mpwriter.append(value)
+                  part.set_content_disposition('form-data', name=key)
+                headers["Content-Type"] = mpwriter.content_type
             async with aiohttp.ClientSession() as session:
-                async with session.get(url=url) as req:
-                    resp = await req.json()
-                page_count = resp["page_count"]
-                addons = []
-                for i in range(len(resp["results"])):
-                    addon = {}
-                    data = resp["results"][i]["addon"]
-                    for ii in range(len(data["authors"])):
-                        data["authors"][ii]["id"] = ""
-                        data["authors"][ii]["url"] = ""
-                        data["authors"][ii]["username"] = ""
-                    addon["authors"] = data["authors"]
-                    addon["current_version"] = {
-                        "files": [{
-                            "id": data["current_version"]["files"][0]["id"],
-                            "permissions": data["current_version"]["files"][0]["permissions"],
-                            "url": data["current_version"]["files"][0]["url"]
-                        }],
-                        "version": data["current_version"]["version"]
-                    }
-                    addon["guid"] = data["guid"]
-                    addon["categories"] = None
-                    addon["created"] = None
-                    addon["default_locale"] = data["default_locale"]
-                    addon["description"] = None
-                    addon["icon_url"] = data["icon_url"]
-                    addon["last_updated"] = data["last_updated"]
-                    addon["name"] = {data["default_locale"]: data["name"][data["default_locale"]]}
-                    addon["ratings"] = {
-                        "average": data["ratings"]["average"],
-                        "count": data["ratings"]["count"]
-                    }
-                    addon["summary"] = None
-                    addon["url"] = None
-                    addons = addons + [{"addon": addon}]
-                results = {}
-                results["results"] = addons
-                return page_count, results
+                async with session.post(url=url, headers=headers, data=mpwriter, cookies=cookies, timeout=0) as req:
+                    resp = await req.read()
+                    resp = json.loads(resp)["info"]
+                    print(filename + resp)
         async def main():
-            url = "https://addons.mozilla.org/api/v5/accounts/account/lindongbin/collections/fenix/addons/?page_size=50&sort=name"
-            page_count, addons = await getaddons(url)
-            addon = addons["results"]
-            if page_count > 1:
-                for page in range(2, page_count + 1):
-                    url = "https://addons.mozilla.org/api/v5/accounts/account/lindongbin/collections/fenix/addons/?page=" + str(page) + "&page_size=50&sort=name"
-                    resp = await getaddons(url)
-                    addon = addon + resp[1]["results"]
-            addons["results"] = addon
-            addons = json.dumps(addons)
-            with open("addons.json","w") as f:
-                f.write(addons)
+            cookies = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
+            headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'}
+            url = "https://pc.woozooo.com/doupload.php"
+            data = {'task': 5, 'folder_id': ${{ secrets.lzy_folder_id }}, 'pg': 1}
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=url, data=data, headers=headers, cookies=cookies) as req:
+                    files = await req.text()
+                url = "https://ftp.mozilla.org/pub/firefox/releases/"
+                async with session.get(url=url) as req:
+                    resp = await req.text()
+                resp1 = re.findall(r'(?<=">)\d+\.\d+(?=/<)', resp)
+                resp1.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1])))
+                resp1 = resp1[-1]
+                resp2 = re.findall(r'(?<=">)\d+\.\d+\.\d+(?=/<)', resp)
+                resp2.sort(key=lambda x: (int(x.split(".")[0]), int(x.split(".")[1]), int(x.split(".")[2])))
+                resp2 = resp2[-1]
+                if resp1.split(".")[0] == resp2.split(".")[0]:
+                    resp = resp2
+                else:
+                    resp = resp1
+                url32 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win32/zh-CN/Firefox%20Setup%20" + resp + ".exe"
+                url64 = "https://ftp.mozilla.org/pub/firefox/releases/" + resp + "/win64/zh-CN/Firefox%20Setup%20" + resp + ".exe"
+                resp32 = "firefox-" + resp + "-win32.exe"
+                resp64 = "firefox-" + resp + "-win64.exe"
+                if files.find(resp32) == -1 or files.find(resp64) == -1:
+                    with open('firefox.sh','+r') as f:
+                        t = f.read()
+                        t = t.replace('url32', url32).replace('url64', url64).replace('resp32', resp32).replace('resp64', resp64)
+                        f.seek(0, 0)
+                        f.write(t)
+                    os.system("./firefox.sh")
+                if files.find(resp32) == -1:
+                    await upload(resp32)
+                else:
+                    print(resp32 + "已存在")
+                if files.find(resp64) == -1:
+                    await upload(resp64)
+                else:
+                    print(resp64 + "已存在")
+                url = "https://api.github.com/repos/mozilla-mobile/fenix/releases/latest"
+                async with session.get(url=url) as req:
+                    resp = await req.read()
+                resp = json.loads(resp)["tag_name"].replace("v", "")
+                if resp.find("rc") == -1:
+                    url32m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-armeabi-v7a.apk"
+                    url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
+                    resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
+                    resp64m = "fenix-" + resp + "-arm64-v8a.apk"
+                    if files.find(resp32m) == -1 or files.find(resp64m) == -1:
+                        with open('mobile.sh','+r') as f:
+                            t = f.read()
+                            t = t.replace('url32m', url32m).replace('url64m', url64m).replace('resp32m', resp32m).replace('resp64m', resp64m)
+                            f.seek(0, 0)
+                            f.write(t)
+                        os.system("./mobile.sh")
+                    if files.find(resp32m) == -1:
+                        await upload(resp32m)
+                    else:
+                        print(resp32m + "已存在")
+                    if files.find(resp64m) == -1:
+                        await upload(resp64m)
+                    else:
+                        print(resp64m + "已存在")
         asyncio.get_event_loop().run_until_complete(main())
         EOF
-
+        
     - name: Run python file
       run: |
-        python addons.py
-        
-    - name: Commit files
-      run: |
-        git config user.name lindongbin
-        git config user.email lin.crk@gmail.com
-        git checkout --orphan fenix
-        git rm -rf .
-        git add "addons.json"
-        git commit -m "Update addons.json"
-        git push --force origin fenix:fenix
-        
-    - name: Refresh collection
-      run: |
-        curl https://purge.jsdelivr.net/gh/lindongbin/gt@fenix/addons.json
+        python firefox.py
