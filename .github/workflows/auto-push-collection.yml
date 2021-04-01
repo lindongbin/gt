@@ -1,8 +1,9 @@
 name: auto-push-collection
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "0 11,23 * * *"
+    - cron: "0 23 * * *"
 
 jobs:
   build:
@@ -30,7 +31,7 @@ jobs:
                 addons = []
                 for i in range(len(resp["results"])):
                     addon = {}
-                    data = resp["results"][i]
+                    data = resp["results"][i]["addon"]
                     for ii in range(len(data["authors"])):
                         data["authors"][ii]["id"] = ""
                         data["authors"][ii]["url"] = ""
@@ -63,12 +64,12 @@ jobs:
                 results["results"] = addons
                 return page_count, results
         async def main():
-            url = "https://addons.mozilla.org/api/v5/addons/search/?page=1&page_size=50&sort=name&type=extension"
+            url = "https://addons.mozilla.org/api/v5/accounts/account/lindongbin/collections/fenix/addons/?page_size=50&sort=name"
             page_count, addons = await getaddons(url)
             addon = addons["results"]
             if page_count > 1:
                 for page in range(2, page_count + 1):
-                    url = "https://addons.mozilla.org/api/v5/addons/search/?page=" + str(page) + "&page_size=50&sort=name&type=extension"
+                    url = "https://addons.mozilla.org/api/v5/accounts/account/lindongbin/collections/fenix/addons/?page=" + str(page) + "&page_size=50&sort=name"
                     resp = await getaddons(url)
                     addon = addon + resp[1]["results"]
             addons["results"] = addon
@@ -86,12 +87,12 @@ jobs:
       run: |
         git config user.name lindongbin
         git config user.email lin.crk@gmail.com
-        git checkout --orphan addons
+        git checkout --orphan fenix
         git rm -rf .
         git add "addons.json"
         git commit -m "Update addons.json"
-        git push --force origin addons:addons
+        git push --force origin fenix:fenix
         
     - name: Refresh collection
       run: |
-        curl https://purge.jsdelivr.net/gh/lindongbin/gt@addons/addons.json
+        curl https://purge.jsdelivr.net/gh/lindongbin/gt@fenix/addons.json
