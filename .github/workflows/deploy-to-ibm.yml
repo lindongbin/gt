@@ -2,7 +2,7 @@ name: deploy-to-ibm
 
 on:
   schedule:
-    - cron: "0 17 */2 * *"
+    - cron: "0 17 */3 * *"
 
 jobs:
   deploy:
