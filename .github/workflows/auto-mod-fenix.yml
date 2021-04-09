@@ -72,7 +72,7 @@ jobs:
             cookies = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
             headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'}
             url = "https://pc.woozooo.com/fileup.php"
-            fields={"task": "1", "folder_id": "-1", "id": "WU_FILE_0", "name": filename, "type": "application/octet-stream"}
+            fields={"task": "1", "folder_id": "${{ secrets.lzy_folder_id }}", "id": "WU_FILE_0", "name": filename, "type": "application/octet-stream"}
             with aiohttp.MultipartWriter("form-data") as mpwriter:
                 part = mpwriter.append(open(filename, 'rb'))
                 part.set_content_disposition('form-data', name="upload_file", filename=filename)
@@ -89,7 +89,7 @@ jobs:
             cookies = {'ylogin': '${{ secrets.lzy_ylogin }}', 'phpdisk_info': '${{ secrets.lzy_phpdisk_info }}'}
             headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'}
             url = "https://pc.woozooo.com/doupload.php"
-            data = {'task': 5, 'folder_id': -1, 'pg': 1}
+            data = {'task': 5, 'folder_id': ${{ secrets.lzy_folder_id }}, 'pg': 1}
             async with aiohttp.ClientSession() as session:
                 async with session.post(url=url, data=data, headers=headers, cookies=cookies) as req:
                     files = await req.text()
