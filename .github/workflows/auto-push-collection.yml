@@ -58,7 +58,7 @@ jobs:
                         "count": data["ratings"]["count"]
                     }
                     addon["summary"] = None
-                    addon["url"] = None
+                    addon["url"] = data["url"]
                     addons = addons + [{"addon": addon}]
                 results = {}
                 results["results"] = addons
