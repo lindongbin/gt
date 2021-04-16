@@ -18,9 +18,40 @@ jobs:
         cat > mobile.sh << EOF
         wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.5.0/apktool_2.5.0.jar
         
+        wget -q -O "resp32m" url32m
         wget -q -O "resp64m" url64m
         
+        java -jar apktool_2.5.0.jar d resp32m -o v7a
         java -jar apktool_2.5.0.jar d resp64m -o v8a
+
+        cp -rf v7a v7a-all
+        cp -rf v8a v8a-all
+
+        sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v7a/apktool.yml
+        sed -i 's/baidu/unknown/g' v7a/assets/extensions/webcompat/data/ua_overrides.js
+        sed -i 's/browser.safebrowsing.malware.enabled/unknown/;s/browser.safebrowsing.phishing.enabled/unknown/' v7a/smali_classes2/org/mozilla/geckoview/ContentBlocking\\\$Settings.smali
+        sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v7a/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\\\$Builder.smali
+        sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v7a/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v7a/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
+        sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v7a/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
+        sed -i 's/0xb40/0x5a0/g' v7a/smali_classes2/org/mozilla/fenix/components/Components\\\$addonCollectionProvider\\\$2.smali
+        sed -i '/3ee/i\
+            new-instance v11, Ljava\/lang\/StringBuilder;\
+            invoke-direct {v11}, Ljava\/lang\/StringBuilder;-><init>()V\
+            const-string v12, "https:\/\/cdn.jsdelivr.net\/gh\/lindongbin\/gt@fenix\/addons\.json?t="\
+            invoke-virtual {v11, v12}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
+            new-instance v12, Ljava\/util\/Date;\
+            invoke-direct {v12}, Ljava\/util\/Date;-><init>()V\
+            invoke-virtual {v12}, Ljava\/util\/Date;->getTime()J\
+            move-result-wide v12\
+            invoke-static {v12, v13}, Ljava\/lang\/String;->valueOf(J)Ljava\/lang\/String;\
+            move-result-object v12\
+            invoke-virtual {v11, v12}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
+            invoke-virtual {v11}, Ljava\/lang\/StringBuilder;->toString()Ljava\/lang\/String;\
+            move-result-object v5\
+            const\/4 v11, 0x0\
+            const\/4 v12, 0x0\
+            const\/4 v13, 0x0' v7a/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
 
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v8a/apktool.yml
         sed -i 's/baidu/unknown/g' v8a/assets/extensions/webcompat/data/ua_overrides.js
@@ -47,17 +78,80 @@ jobs:
             const\/4 v11, 0x0\
             const\/4 v12, 0x0\
             const\/4 v13, 0x0' v8a/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
+
+        sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v7a-all/apktool.yml
+        sed -i 's/baidu/unknown/g' v7a-all/assets/extensions/webcompat/data/ua_overrides.js
+        sed -i 's/browser.safebrowsing.malware.enabled/unknown/;s/browser.safebrowsing.phishing.enabled/unknown/' v7a-all/smali_classes2/org/mozilla/geckoview/ContentBlocking\\\$Settings.smali
+        sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v7a-all/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\\\$Builder.smali
+        sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v7a-all/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v7a-all/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
+        sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v7a-all/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
+        sed -i 's/0xb40/0x5a0/g' v7a-all/smali_classes2/org/mozilla/fenix/components/Components\\\$addonCollectionProvider\\\$2.smali
+        sed -i 's/if-eqz p1, :cond_c/goto :cond_c/' v7a-all/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
+        sed -i '/3ee/i\
+            new-instance v11, Ljava\/lang\/StringBuilder;\
+            invoke-direct {v11}, Ljava\/lang\/StringBuilder;-><init>()V\
+            const-string v12, "https:\/\/cdn.jsdelivr.net\/gh\/lindongbin\/gt@addons\/addons\.json?t="\
+            invoke-virtual {v11, v12}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
+            new-instance v12, Ljava\/util\/Date;\
+            invoke-direct {v12}, Ljava\/util\/Date;-><init>()V\
+            invoke-virtual {v12}, Ljava\/util\/Date;->getTime()J\
+            move-result-wide v12\
+            invoke-static {v12, v13}, Ljava\/lang\/String;->valueOf(J)Ljava\/lang\/String;\
+            move-result-object v12\
+            invoke-virtual {v11, v12}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
+            invoke-virtual {v11}, Ljava\/lang\/StringBuilder;->toString()Ljava\/lang\/String;\
+            move-result-object v5\
+            const\/4 v11, 0x0\
+            const\/4 v12, 0x0\
+            const\/4 v13, 0x0' v7a-all/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
+
+        sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v8a-all/apktool.yml
+        sed -i 's/baidu/unknown/g' v8a-all/assets/extensions/webcompat/data/ua_overrides.js
+        sed -i 's/browser.safebrowsing.malware.enabled/unknown/;s/browser.safebrowsing.phishing.enabled/unknown/' v8a-all/smali_classes2/org/mozilla/geckoview/ContentBlocking\\\$Settings.smali
+        sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v8a-all/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\\\$Builder.smali
+        sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v8a-all/smali/mozilla/components/feature/addons/AddonManager.smali
+        sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v8a-all/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
+        sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v8a-all/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
+        sed -i 's/0xb40/0x5a0/g' v8a-all/smali_classes2/org/mozilla/fenix/components/Components\\\$addonCollectionProvider\\\$2.smali
+        sed -i 's/if-eqz p1, :cond_c/goto :cond_c/' v8a-all/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
+        sed -i '/3ee/i\
+            new-instance v11, Ljava\/lang\/StringBuilder;\
+            invoke-direct {v11}, Ljava\/lang\/StringBuilder;-><init>()V\
+            const-string v12, "https:\/\/cdn.jsdelivr.net\/gh\/lindongbin\/gt@addons\/addons\.json?t="\
+            invoke-virtual {v11, v12}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
+            new-instance v12, Ljava\/util\/Date;\
+            invoke-direct {v12}, Ljava\/util\/Date;-><init>()V\
+            invoke-virtual {v12}, Ljava\/util\/Date;->getTime()J\
+            move-result-wide v12\
+            invoke-static {v12, v13}, Ljava\/lang\/String;->valueOf(J)Ljava\/lang\/String;\
+            move-result-object v12\
+            invoke-virtual {v11, v12}, Ljava\/lang\/StringBuilder;->append(Ljava\/lang\/String;)Ljava\/lang\/StringBuilder;\
+            invoke-virtual {v11}, Ljava\/lang\/StringBuilder;->toString()Ljava\/lang\/String;\
+            move-result-object v5\
+            const\/4 v11, 0x0\
+            const\/4 v12, 0x0\
+            const\/4 v13, 0x0' v8a-all/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
         
+        java -jar apktool_2.5.0.jar b v7a -o v7a.apk --use-aapt2
         java -jar apktool_2.5.0.jar b v8a -o v8a.apk --use-aapt2
+        java -jar apktool_2.5.0.jar b v7a-all -o v7a-all.apk --use-aapt2
+        java -jar apktool_2.5.0.jar b v8a-all -o v8a-all.apk --use-aapt2
         
         wget -q https://github.com/lindongbin/gt/raw/master/zipalign
         wget -q -P ./lib64 https://github.com/lindongbin/gt/raw/master/libc%2B%2B.so
         chmod +x zipalign
+        ./zipalign -p 4 v7a.apk v7a-align.apk
         ./zipalign -p 4 v8a.apk v8a-align.apk
+        ./zipalign -p 4 v7a-all.apk v7a-all-align.apk
+        ./zipalign -p 4 v8a-all.apk v8a-all-align.apk
         
         wget -q https://github.com/lindongbin/gt/raw/master/apksigner.jar
         wget -q https://github.com/lindongbin/gt/raw/master/apksigner.jks
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out resp32mm v7a-align.apk
         java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out resp64mm v8a-align.apk
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out resp32mma v7a-all-align.apk
+        java -jar apksigner.jar sign --ks apksigner.jks --ks-pass pass:testkey --out resp64mma v8a-all-align.apk
         EOF
 
         chmod +x ./mobile.sh
@@ -99,16 +193,34 @@ jobs:
                 async with session.get(url=url) as req:
                     resp = await req.read()
                 resp = json.loads(resp)["tag_name"].replace("v", "")
+                url32m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-armeabi-v7a.apk"
                 url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
+                resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
                 resp64m = "fenix-" + resp + "-arm64-v8a.apk"
-                resp64mm = "fenix-" + resp + "-arm64-v8a-mod.apk"
-                if files.find(resp64mm) == -1:
+                resp32mm = "fenix-" + resp + "-armeabi-v7a-部分扩展.apk"
+                resp64mm = "fenix-" + resp + "-arm64-v8a-部分扩展.apk"
+                resp32mma = "fenix-" + resp + "-armeabi-v7a-全部扩展.apk"
+                resp64mma = "fenix-" + resp + "-arm64-v8a-全部扩展.apk"
+                if files.find(resp32mma) == -1 or files.find(resp64mma) == -1 or files.find(resp32mm) == -1 or files.find(resp64mm) == -1:
                     with open('mobile.sh','+r') as f:
                         t = f.read()
-                        t = t.replace('url64m', url64m).replace('resp64mm', resp64mm).replace('resp64m', resp64m)
+                        t = t.replace('url32m', url32m).replace('url64m', url64m).replace('resp32mma', resp32mma).replace('resp64mma', resp64mma).replace('resp32mm', resp32mm).replace('resp64mm', resp64mm).replace('resp32m', resp32m).replace('resp64m', resp64m)
                         f.seek(0, 0)
                         f.write(t)
                     os.system("./mobile.sh")
+                if files.find(resp32mma) == -1:
+                    await upload(resp32mma)
+                else:
+                    print(resp32mma + "已存在")
+                if files.find(resp64mma) == -1:
+                    await upload(resp64mma)
+                else:
+                    print(resp64mma + "已存在")
+                if files.find(resp32mm) == -1:
+                    await upload(resp32mm)
+                else:
+                    print(resp32mm + "已存在")
+                if files.find(resp64mm) == -1:
                     await upload(resp64mm)
                 else:
                     print(resp64mm + "已存在")
