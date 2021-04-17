@@ -35,7 +35,8 @@ jobs:
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v7a/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
         sed -i 's/^.*iget-boolean.*showSecretDebugMenuThisSession:Z$/    const\/4 v0, 0x1/' v7a/smali_classes2/org/mozilla/fenix/utils/Settings.smali
         sed -i 's/const\/4 v0, 0x0/const\/4 v0, 0x1/g' v7a/smali_classes2/org/mozilla/fenix/ReleaseChannel.smali
-        sed -i 's/const-wide\/16 p7, -0x1/const-wide\/16 p7, 0xb40/' v7a/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
+        sed -i 's/"mozilla"/"lindongbin"/g;s/7dfae8669acc4312a65e8ba5553036/fenix/g' v7a/smali_classes2/org/mozilla/fenix/components/Components\\\$addonCollectionProvider\\\$2.smali
+        sed -i 's/"-popularity"/"name"/' v7a/smali/mozilla/components/feature/addons/amo/SortOption.smali
         
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v8a/apktool.yml
         sed -i 's/baidu/unknown/g' v8a/assets/extensions/webcompat/data/ua_overrides.js
@@ -45,7 +46,8 @@ jobs:
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v8a/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
         sed -i 's/^.*iget-boolean.*showSecretDebugMenuThisSession:Z$/    const\/4 v0, 0x1/' v8a/smali_classes2/org/mozilla/fenix/utils/Settings.smali
         sed -i 's/const\/4 v0, 0x0/const\/4 v0, 0x1/g' v8a/smali_classes2/org/mozilla/fenix/ReleaseChannel.smali
-        sed -i 's/const-wide\/16 p7, -0x1/const-wide\/16 p7, 0xb40/' v8a/smali/mozilla/components/feature/addons/amo/AddonCollectionProvider.smali
+        sed -i 's/"mozilla"/"lindongbin"/g;s/7dfae8669acc4312a65e8ba5553036/fenix/g' v7a/smali_classes2/org/mozilla/fenix/components/Components\\\$addonCollectionProvider\\\$2.smali
+        sed -i 's/"-popularity"/"name"/' v7a/smali/mozilla/components/feature/addons/amo/SortOption.smali
 
         sed -i "s/^.*versionCode.*$/  versionCode: '2147483647'/" v7a-all/apktool.yml
         sed -i 's/baidu/unknown/g' v7a-all/assets/extensions/webcompat/data/ua_overrides.js
@@ -54,7 +56,6 @@ jobs:
         sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v7a-all/smali/mozilla/components/feature/addons/AddonManager.smali
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v7a-all/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
         sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v7a-all/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
-        #sed -i 's/0xb40/0x5a0/g' v7a-all/smali_classes2/org/mozilla/fenix/components/Components\\\$addonCollectionProvider\\\$2.smali
         sed -i 's/if-eqz p1, :cond_c/goto :cond_c/' v7a-all/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         sed -i '/3ee/i\
             new-instance v11, Ljava\/lang\/StringBuilder;\
@@ -81,7 +82,6 @@ jobs:
         sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v8a-all/smali/mozilla/components/feature/addons/AddonManager.smali
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v8a-all/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
         sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v8a-all/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
-        #sed -i 's/0xb40/0x5a0/g' v8a-all/smali_classes2/org/mozilla/fenix/components/Components\\\$addonCollectionProvider\\\$2.smali
         sed -i 's/if-eqz p1, :cond_c/goto :cond_c/' v8a-all/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         sed -i '/3ee/i\
             new-instance v11, Ljava\/lang\/StringBuilder;\
