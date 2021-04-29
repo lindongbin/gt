@@ -168,6 +168,16 @@ async def bdbk(bkmsg):
         return
 
 async def ws_group(ws, recv_data):
+    
+    if recv_data["sub_type"] == "friend":
+        bot = recv_data["self_id"]
+        sender = recv_data["sender"]["user_id"]
+        if sender == bot:
+            source = recv_data["message_id"]
+            await asyncio.sleep(5)
+            sendmsg = {"action": "delete_msg", "params": {"message_id": source}}
+            await ws.send_json(sendmsg)
+            return
 
     if recv_data["sub_type"] == "normal":
 
