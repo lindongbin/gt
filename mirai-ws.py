@@ -367,6 +367,14 @@ async def ws_event(ws, recv_data):
                 sendmsg = {"action": "get_stranger_info", "params": {"user_id": sender, "no_cache": True}}
                 await ws.send_json(sendmsg)
                 return
+            
+    if recv_data["notice_type"] == "group_upload":
+        group = recv_data["group_id"]
+        file_id = recv_data["file"]["id"]
+        bus_id = recv_data["file"]["busid"]
+        sendmsg = {"action": "delete_group_file", "params": {"group_id": group, "file_id": file_id, "bus_id": bus_id}}
+        await ws.send_json(sendmsg)
+        return
 
 fstpc = 0
 fstmo = 0
