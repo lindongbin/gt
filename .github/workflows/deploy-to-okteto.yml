@@ -116,6 +116,7 @@ jobs:
         cat > okteto.yml << EOF
         name: mirai
         image: okteto.dev/mirai
+        autocreate: true
         sync:
           - .:/mirai
         EOF
