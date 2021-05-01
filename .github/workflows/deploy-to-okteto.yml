@@ -1,8 +1,9 @@
 name: deploy-to-okteto
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "30 19,23 * * *"
+    - cron: "30 17,21 * * *"
 
 jobs:
   deploy:
@@ -74,7 +75,47 @@ jobs:
         EOF
         
         cat > mirai.py << EOF
-        import os, datetime, random, asyncio, aiohttp
+        import os, datetime, random, asyncio, aiohttp, json
+        async def pixiv():
+            try:
+                async with aiohttp.ClientSession() as session:
+                    pix = random.randint(1, 10)
+                    url = "https://www.pixiv.net/ranking.php?mode=daily&content=illust&p=" + str(pix) +"&format=json"
+                    async with session.get(url=url) as req:
+                        resp = await req.read()
+                    pix = random.randint(0, 49)
+                    illust_id = json.loads(resp)["contents"][pix]["illust_id"]
+                    title = json.loads(resp)["contents"][pix]["title"]
+                    user_name = json.loads(resp)["contents"][pix]["user_name"]
+                    url = "https://www.pixiv.net/ajax/illust/" + str(illust_id) + "/pages"
+                    async with session.get(url=url) as req:
+                        resp = await req.read()
+                    resp = json.loads(resp)["body"][0]["urls"]["original"]
+                    img = resp.split("/")[-1]
+                    year = datetime.datetime.utcnow().year
+                    month = datetime.datetime.utcnow().month
+                    file = "./pixiv/" + str(year) + str(month) + ".txt"
+                    if not os.path.exists(file):
+                        with open(file, "w") as f:
+                            f.write("")
+                    with open(file, "r") as f:
+                        imgs = f.readlines()
+                    for i in range(0,len(imgs)):
+                        imgs[i] = imgs[i].strip()
+                    if img in imgs:
+                        return
+                    else:
+                        headers = {'Referer':'https://app-api.pixiv.net/'}
+                        async with session.get(url=resp, headers=headers) as req:
+                            resp = await req.read()
+                            with open(img, "wb") as f:
+                                f.write(resp)
+                            with open(file, "a") as f:
+                                f.write("\n" + img)
+                            resp = [{"type": "Plain", "text": "标题：" + title +"\n作者：" + user_name + "\n来源：" + str(illust_id)}, {"type": "Image", "path": "../../../" + img }]
+                            return resp
+            except:
+                return
         async def main():
             os.system('./openjdk-11.0.11_9-jre/bin/java -cp "./libs/*" net.mamoe.mirai.console.terminal.MiraiConsoleTerminalLoader $* &')
             retry = True
@@ -87,19 +128,20 @@ jobs:
                             sessionKey = resp["session"]
                         data = {"sessionKey": sessionKey, "qq": ${{ secrets.CF_QQID_IBM }}}
                         async with session.post(url="http://127.0.0.1:8090/verify", json=data) as req:
-                            resp = await req.json()
-                        while True:
-                            hh = datetime.datetime.utcnow().hour + 8
-                            if hh >= 24:
-                                hh = hh - 24
-                            mm = datetime.datetime.now().minute
-                            resp = "现在是" + str(hh) + "时" + str(mm) + "分"
-                            data = {"sessionKey": sessionKey, "target": ${{ secrets.OK_ALIVE }}, "messageChain": [{ "type": "Plain", "text": resp}]}
-                            async with session.post(url="http://127.0.0.1:8090/sendFriendMessage", json=data) as req:
-                                resp = await req.json()
-                                delay = random.randint(2, 5)
-                                delay = delay * 60
-                                await asyncio.sleep(delay)
+                            while True:
+                                hh = datetime.datetime.utcnow().hour + 8
+                                if hh >= 24:
+                                    hh = hh - 24
+                                if 8 <= hh <= 24:
+                                    resp = await pixiv()
+                                    if resp:
+                                        data = {"sessionKey": sessionKey, "target": ${{ secrets.CF_QQUN_IBM }}, "messageChain": resp}
+                                        async with session.post(url="http://127.0.0.1:8090/sendGroupMessage", json=data) as req:
+                                            delay = random.randint(10, 15)
+                                            delay = delay * 60
+                                            await asyncio.sleep(delay)
+                                    else:
+                                        await asyncio.sleep(30)
                 except:
                     await asyncio.sleep(5)
                     retry = True
