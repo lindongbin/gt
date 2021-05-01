@@ -1,4 +1,4 @@
-name: auto-push-collection-all
+name: auto-push-collection
 
 on:
   workflow_dispatch:
