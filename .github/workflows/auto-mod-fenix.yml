@@ -157,6 +157,7 @@ jobs:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url=url, data=data, headers=headers, cookies=cookies) as req:
                     files = await req.text()
+                    files = files.encode('utf-8').decode('unicode_escape')
                 url = "https://api.github.com/repos/mozilla-mobile/fenix/releases/latest"
                 async with session.get(url=url) as req:
                     resp = await req.read()
