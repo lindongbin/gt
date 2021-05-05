@@ -165,10 +165,10 @@ jobs:
                 url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
                 resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
                 resp64m = "fenix-" + resp + "-arm64-v8a.apk"
-                resp32mm = "fenix-" + resp + "-armeabi-v7a-自定义扩展集合版.apk"
-                resp64mm = "fenix-" + resp + "-arm64-v8a-自定义扩展集合版.apk"
-                resp32mma = "fenix-" + resp + "-armeabi-v7a-支持全部扩展版.apk"
-                resp64mma = "fenix-" + resp + "-arm64-v8a-支持全部扩展版.apk"
+                resp32mm = "fenix-" + resp + "-armeabi-v7a-自定义扩展集合.apk"
+                resp64mm = "fenix-" + resp + "-arm64-v8a-自定义扩展集合.apk"
+                resp32mma = "fenix-" + resp + "-armeabi-v7a-支持全扩展安装.apk"
+                resp64mma = "fenix-" + resp + "-arm64-v8a-支持全扩展安装.apk"
                 if files.find(resp32mma) == -1 or files.find(resp64mma) == -1 or files.find(resp32mm) == -1 or files.find(resp64mm) == -1:
                     with open('mobile.sh','+r') as f:
                         t = f.read()
