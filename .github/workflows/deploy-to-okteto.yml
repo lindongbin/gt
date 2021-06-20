@@ -16,6 +16,7 @@ jobs:
         tar -zxf OpenJDK11U-jre_x64_linux_11.0.11_9.tar.gz
         
         ver=$(curl -sL https://api.github.com/repos/mamoe/mirai/releases/latest | sed 's/,/\n/g' | grep "tag_name" | sed 's/:/\n/g' | sed '1d' | sed 's/"//g' | sed 's/ //g' | sed 's/v//')
+        ver=2.6.7
         wget -q -P ./libs https://repo1.maven.org/maven2/net/mamoe/mirai-core-all/${ver}/mirai-core-all-${ver}-all.jar
         wget -q -P ./libs https://repo1.maven.org/maven2/net/mamoe/mirai-console/${ver}/mirai-console-${ver}-all.jar
         wget -q -P ./libs https://repo1.maven.org/maven2/net/mamoe/mirai-console-terminal/${ver}/mirai-console-terminal-${ver}-all.jar
