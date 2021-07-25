@@ -57,7 +57,7 @@ jobs:
         sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v7a-all/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\\\$Builder.smali
         sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v7a-all/smali/mozilla/components/feature/addons/AddonManager.smali
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v7a-all/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
-        sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v7a-all/smali/org/mozilla/fenix/AppRequestInterceptor.smali
+        sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v7a-all/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
         sed -i 's/if-eqz p1, :cond_c/goto :cond_c/' v7a-all/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         sed -i '/3ee/i\
             new-instance v11, Ljava\/lang\/StringBuilder;\
@@ -83,7 +83,7 @@ jobs:
         sed -i '/public aboutConfigEnabled/{n;s/\.locals 1/\.locals 1\n    const\/4 p1, 0x1/}' v8a-all/smali_classes2/org/mozilla/geckoview/GeckoRuntimeSettings\\\$Builder.smali
         sed -i 's/"geckoViewAddons"/"unknown"/;s/"nativeMessaging"/"unknown"/;/invoke-virtual {p0, p1, p2, p3}/i\    const\/4 p2, 0x1' v8a-all/smali/mozilla/components/feature/addons/AddonManager.smali
         sed -i 's/"content"/"unknown"/;s/"file"/"unknown"/;s/"resource"/"unknown"/' v8a-all/smali/mozilla/components/browser/engine/gecko/GeckoEngineSession.smali
-        sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v8a-all/smali/org/mozilla/fenix/AppRequestInterceptor.smali
+        sed -i 's/android\/downloads/([^\\\\\\\\s]+)\/downloads/;/getOrNull/i\    const\/4 v5, 0x2' v8a-all/smali_classes2/org/mozilla/fenix/AppRequestInterceptor.smali
         sed -i 's/if-eqz p1, :cond_c/goto :cond_c/' v8a-all/smali/mozilla/components/feature/addons/ui/AddonsManagerAdapter.smali
         sed -i '/3ee/i\
             new-instance v11, Ljava\/lang\/StringBuilder;\
