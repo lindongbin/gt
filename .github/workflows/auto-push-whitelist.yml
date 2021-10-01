@@ -34,7 +34,7 @@ jobs:
             parser = ArgumentParser()
             parser.add_argument('-i', '--input', dest='input', default='whitelist.pac',
                 help='path to gfwlist')
-            parser.add_argument('-o', '--output', dest='output', default='whitelist.pac',
+            parser.add_argument('-o', '--output', dest='output', default='chinalist.pac',
                 help='path to output pac', metavar='PAC')
             parser.add_argument('-p', '--proxy', dest='proxy', default='"SOCKS5 127.0.0.1:1080; SOCKS 127.0.0.1:1080;"',
                 help='the proxy parameter in the pac file, for example,\
@@ -100,6 +100,6 @@ jobs:
         git config user.email lin.crk@gmail.com
         git checkout --orphan whitelist
         git rm -rf .
-        git add "whitelist.pac"
-        git commit -m "Update whitelist.pac"
+        git add "chinalist.pac"
+        git commit -m "Update chinalist.pac"
         git push --force origin whitelist:whitelist
