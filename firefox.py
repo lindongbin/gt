@@ -76,8 +76,8 @@ async def main():
         if resp.find("rc") == -1:
             url32m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-armeabi-v7a.apk"
             url64m = "https://github.com/mozilla-mobile/fenix/releases/download/v" + resp + "/fenix-" + resp + "-arm64-v8a.apk"
-            resp32m = "fenix-" + resp + "-armeabi-v7a-官方版.apk"
-            resp64m = "fenix-" + resp + "-arm64-v8a-官方版.apk"
+            resp32m = "fenix-" + resp + "-armeabi-v7a.apk"
+            resp64m = "fenix-" + resp + "-arm64-v8a.apk"
             if files.find(resp32m) == -1 or files.find(resp64m) == -1:
                 await download(url32m, resp32m)
                 await download(url64m, resp64m)
