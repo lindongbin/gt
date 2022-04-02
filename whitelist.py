@@ -33,11 +33,17 @@ def writefile(input_file, proxy, output_file):
 def get_list():
     print('Getting domain whitelist...')
     dnsmasq_china_list = 'https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf'
+    dnsmasq_google_list = 'https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/google.china.conf'
     whitelist = []
     try:
         content = getList(dnsmasq_china_list)
         content = content.decode('utf-8')
         f = codecs.open('whitelistCache', 'w', 'utf-8')
+        f.write(content)
+        f.close()
+        content = getList(dnsmasq_google_list)
+        content = content.decode('utf-8')
+        f = codecs.open('whitelistCache', 'a+', 'utf-8')
         f.write(content)
         f.close()
 
