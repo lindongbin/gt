@@ -1,6 +1,6 @@
-2022-08-06 22:11:53
+2022-08-13 22:12:27
 
-Autonomous.JSON.Database: AVAILABLE
+AutonomousDatabase: AVAILABLE
 
 VM.Standard.A1.Flex: RUNNING
 
