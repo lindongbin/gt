@@ -1,7 +1,7 @@
-2022-08-13 22:12:27
+2022-08-20 22:12:26
 
 AutonomousDatabase: AVAILABLE
 
-VM.Standard.A1.Flex: RUNNING
+ComputeInstance: RUNNING
 
-VM.Standard.A1.Flex: RUNNING
+ComputeInstance: RUNNING
